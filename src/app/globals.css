@@ -55,6 +55,14 @@ html {
   --navy: #071327;
   --navy-mid: #13233f;
   --navy-light: #1e3a63;
+  --brand-blue-50: #f4f8fd;
+  --brand-blue-100: #e5eef9;
+  --brand-blue-200: #cdddf1;
+  --brand-blue-400: #5f95d4;
+  --brand-blue-500: #3d7fc5;
+  --brand-blue-700: #28538d;
+  --ink-900: #0d0f14;
+  --ink-700: #303641;
   --gold: #d8b24a;
   --gold-light: #f2d277;
   --slate-50: #f7f9fc;
@@ -141,8 +149,8 @@ html {
     @apply bg-background text-foreground;
     overflow-x: clip;
     background:
-      radial-gradient(circle at top left, rgba(216, 178, 74, 0.08), transparent 28%),
-      linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+      radial-gradient(circle at top left, rgba(95, 149, 212, 0.12), transparent 28%),
+      linear-gradient(180deg, #ffffff 0%, #f5f8fc 48%, #eef4fb 100%);
   }
 }
 
@@ -153,10 +161,10 @@ html {
 
   .hero-mesh {
     background:
-      radial-gradient(circle at 10% 20%, rgba(216, 178, 74, 0.12), transparent 28%),
-      radial-gradient(circle at 84% 18%, rgba(255, 255, 255, 0.08), transparent 16%),
-      radial-gradient(circle at 75% 80%, rgba(44, 88, 168, 0.3), transparent 22%),
-      linear-gradient(135deg, #061121 0%, #09172d 55%, #030913 100%);
+      radial-gradient(circle at 12% 18%, rgba(95, 149, 212, 0.24), transparent 26%),
+      radial-gradient(circle at 85% 12%, rgba(61, 127, 197, 0.18), transparent 18%),
+      radial-gradient(circle at 74% 82%, rgba(40, 83, 141, 0.12), transparent 24%),
+      linear-gradient(135deg, #f8fbff 0%, #eef4fb 44%, #dce8f5 100%);
   }
 
   .noise-overlay::before {
@@ -164,7 +172,7 @@ html {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.18;
+    opacity: 0.1;
     mix-blend-mode: soft-light;
     background-image:
       linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
