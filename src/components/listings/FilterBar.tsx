@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { SlidersHorizontal, Search } from "lucide-react";
+import { PropertyStatus } from "@/src/types/property";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ export type SortOrder = "asc" | "desc";
 
 export interface FilterState {
   search: string;
+  propertyStatus: PropertyStatus;
   priceMin: number | "";
   priceMax: number | "";
   bedrooms: string;
@@ -22,6 +24,7 @@ export interface FilterState {
 
 export const defaultFilters: FilterState = {
   search: "",
+  propertyStatus: "Pre-Leased",
   priceMin: "",
   priceMax: "",
   bedrooms: "Any bedrooms",
@@ -48,6 +51,7 @@ const SORT_ORDER_OPTIONS: { label: string; value: SortOrder }[] = [
   { label: "Asc", value: "asc" },
   { label: "Desc", value: "desc" },
 ];
+const STATUS_OPTIONS: PropertyStatus[] = ["Pre-Leased", "Lease-Ready", "Sale"];
 
 // ─── Shared input class ───────────────────────────────────────────────────────
 
@@ -64,9 +68,16 @@ interface FilterBarProps {
   onChange: (filters: FilterState) => void;
   onApply: (filters: FilterState) => void;
   onReset: () => void;
+  onStatusChange: (status: PropertyStatus) => void;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onApply, onReset }) => {
+const FilterBar: React.FC<FilterBarProps> = ({
+  filters,
+  onChange,
+  onApply,
+  onReset,
+  onStatusChange,
+}) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function set<K extends keyof FilterState>(key: K, value: FilterState[K]) {
@@ -116,6 +127,28 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onApply, onRes
           >
             Reset all
           </button>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl bg-slate-100 p-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
+          {STATUS_OPTIONS.map((status) => {
+            const active = filters.propertyStatus === status;
+
+            return (
+              <button
+                key={status}
+                onClick={() => onStatusChange(status)}
+                className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {status}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -7,10 +7,14 @@ import FilterBar, {
   FilterState,
 } from "@/src/components/listings/FilterBar";
 import PropertyCard from "@/src/components/listings/PropertyCard";
-import { Property, PropertySource } from "@/src/types/property";
+import { Property, PropertySource, PropertyStatus } from "@/src/types/property";
 
 function applyFilters(properties: Property[], filters: FilterState): Property[] {
   let result = [...properties];
+
+  result = result.filter(
+    (property) => property.propertyStatus === filters.propertyStatus
+  );
 
   if (filters.search.trim()) {
     const query = filters.search.toLowerCase();
@@ -81,6 +85,11 @@ export default function PropertyBrowser({
     setAppliedFilters(defaultFilters);
   }
 
+  function handleStatusChange(status: PropertyStatus) {
+    setFilters((prev) => ({ ...prev, propertyStatus: status }));
+    setAppliedFilters((prev) => ({ ...prev, propertyStatus: status }));
+  }
+
   function handleViewDetails(property: Property) {
     router.push(`/property/${property.slug}?source=${source}`);
   }
@@ -107,6 +116,7 @@ export default function PropertyBrowser({
         onChange={setFilters}
         onApply={setAppliedFilters}
         onReset={handleReset}
+        onStatusChange={handleStatusChange}
       />
 
       <p className="text-sm text-slate-500 mt-5 mb-4">

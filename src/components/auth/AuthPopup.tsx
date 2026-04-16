@@ -10,9 +10,15 @@ interface AuthPopupProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: Tab;
+  onLoginSuccess?: () => void;
 }
 
-export default function AuthPopup({ isOpen, onClose, defaultTab = 'login' }: AuthPopupProps) {
+export default function AuthPopup({
+  isOpen,
+  onClose,
+  defaultTab = 'login',
+  onLoginSuccess,
+}: AuthPopupProps) {
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -36,8 +42,11 @@ export default function AuthPopup({ isOpen, onClose, defaultTab = 'login' }: Aut
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire up login API call
+    // TODO: replace with real auth API flow.
+    localStorage.setItem('preleasehub:isLoggedIn', 'true');
     console.log({ loginEmail, loginPassword, rememberMe });
+    onLoginSuccess?.();
+    onClose();
   }
 
   function handleSignup(e: React.FormEvent) {
@@ -56,16 +65,13 @@ export default function AuthPopup({ isOpen, onClose, defaultTab = 'login' }: Aut
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-        <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
 
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <span className="text-[15px] font-semibold text-gray-900">PrereleaseHub Access</span>
-              <span className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-600">
-                <ShieldCheck className="h-3 w-3" />
-                Secure UI
-              </span>
+              
             </div>
             <button
               onClick={onClose}

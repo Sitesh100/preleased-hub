@@ -5,7 +5,8 @@ export type PropertyType =
   | "Villa"
   | "Commercial";
 
-export type PropertySource = "listings" | "investment";
+export type PropertySource = "listings";
+export type PropertyStatus = "Pre-Leased" | "Lease-Ready" | "Sale";
 
 export interface Property {
   id: string;
@@ -22,6 +23,7 @@ export interface Property {
   roi: number;
   imageUrl: string;
   currency?: string;
+  propertyStatus: PropertyStatus;
   statusLabel: string;
   description: string;
   highlights: string[];

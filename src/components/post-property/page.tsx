@@ -1,416 +1,192 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Upload } from "lucide-react";
+import AuthPopup from "@/src/components/auth/AuthPopup";
 
-// Shared class strings
-const INPUT_CLS =
-  "h-10 rounded-[10px] border-[#b8d2e6] bg-white text-[#0f3557] placeholder:text-slate-400 focus:border-[#1a6db5] focus:ring-[#1a6db5]/10";
-const SELECT_TRIGGER_CLS =
-  "h-10 rounded-[10px] border-[#b8d2e6] bg-white text-[#0f3557] focus:border-[#1a6db5] focus:ring-[#1a6db5]/10";
-const SELECT_CONTENT_CLS =
-  "bg-white border border-[#d7e4ef] rounded-[10px] shadow-md p-1";
-const SELECT_ITEM_CLS =
-  "rounded-[6px] text-[14px] text-[#0f3557] focus:bg-[#f0f7ff] focus:text-[#0f3557] data-[highlighted]:bg-[#f0f7ff] data-[state=checked]:font-medium cursor-pointer";
+const inputClass =
+  "h-12 w-full rounded-[14px] border border-[#ced7e3] bg-[#f4f6f8] px-4 text-[17px] text-[#5c6f88] outline-none transition placeholder:text-[#5c6f88] focus:border-[#9fb1ca]";
 
-const PROPERTY_TYPES = [
-  { value: "hotel", label: "Hotel" },
-  { value: "restaurant", label: "Restaurant" },
-  { value: "flat", label: "Flat" },
-  { value: "office", label: "Office" },
-  { value: "showroom", label: "Showroom" },
-];
+const selectTriggerClass =
+  "flex h-12 w-full items-center justify-between rounded-[14px] border border-[#ced7e3] bg-[#f4f6f8] px-4 text-[17px] text-[#223049]";
 
-const CITIES = [
-  { value: "surat", label: "Surat" },
-  { value: "ahmedabad", label: "Ahmedabad" },
-  { value: "indore", label: "Indore" },
-  { value: "gurugram", label: "Gurugram" },
-];
+const selectMenuClass =
+  "absolute left-0 right-0 top-[56px] z-20 rounded-[12px] border border-[#d3dce7] bg-[#f4f6f8] py-1 shadow-[0_8px_24px_rgba(21,30,58,0.12)]";
 
-const FLOORS = [
-  { value: "ground", label: "Ground Floor" },
-  { value: "1st", label: "1st Floor" },
-  { value: "2nd", label: "2nd Floor" },
-  { value: "3rd", label: "3rd Floor" },
-];
-
-const TENANT_TYPES = [
-  { value: "luxury-retail", label: "Luxury Retail" },
-  { value: "fnb", label: "F&B" },
-  { value: "corporate", label: "Corporate" },
-  { value: "co-working", label: "Co-working" },
-];
-
-const AGE_OPTIONS = [
-  { value: "0-1", label: "0–1 years" },
-  { value: "1-3", label: "1–3 years" },
-  { value: "3-5", label: "3–5 years" },
-  { value: "5+", label: "5+ years" },
-];
-
-const PRICE_UNITS = [
-  { value: "crore", label: "Crore" },
-  { value: "lakh", label: "Lakh" },
-];
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-3.5 border-b border-[#dce9f5] pb-2 text-[11px] font-semibold uppercase tracking-widest text-[#1a6db5]">
-      {children}
-    </p>
-  );
-}
-
-function FieldLabel({
-  children,
-  required,
+function SelectBox({
+  value,
+  placeholder,
+  options,
+  open,
+  onToggle,
+  onSelect,
 }: {
-  children: React.ReactNode;
-  required?: boolean;
+  value: string;
+  placeholder: string;
+  options: string[];
+  open: boolean;
+  onToggle: () => void;
+  onSelect: (item: string) => void;
 }) {
   return (
-    <p className="mb-1.5 text-[13px] font-medium text-[#244e73]">
-      {children}
-      {required && <span className="ml-0.5 text-[#2b74b5]">*</span>}
-    </p>
-  );
-}
+    <div className="relative">
+      <button type="button" className={selectTriggerClass} onClick={onToggle}>
+        <span className={value ? "text-[#223049]" : "text-[#5c6f88]"}>{value || placeholder}</span>
+        <ChevronDown className="h-5 w-5 text-[#7c8ea4]" />
+      </button>
 
-// Simple InputField wrapper
-function InputField({
-  label,
-  requiredMark,
-  ...props
-}: {
-  label: string;
-  requiredMark?: boolean;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <FieldLabel required={requiredMark}>{label}</FieldLabel>
-      <Input className={INPUT_CLS} {...props} />
+      {open && (
+        <div className={selectMenuClass}>
+          {options.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onSelect(item)}
+              className="block w-full px-8 py-2 text-left text-[17px] text-[#2b3a51] transition hover:bg-[#e8edf3]"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// Calendar date picker wrapper
-function CalendarField({
-  label,
-  requiredMark,
-  value,
-  onChange,
-}: {
-  label: string;
-  requiredMark?: boolean;
-  value?: Date;
-  onChange?: (date: Date | undefined) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
+function Pill({ text }: { text: string }) {
   return (
-    <div>
-      <FieldLabel required={requiredMark}>{label}</FieldLabel>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex h-10 w-full items-center justify-between rounded-[10px] border border-[#b8d2e6] bg-white px-3 text-[14px] text-[#0f3557] transition hover:border-[#1a6db5]"
-          >
-            <span className={value ? "text-[#0f3557]" : "text-slate-400"}>
-              {value ? format(value, "dd MMM yyyy") : "Pick a date"}
-            </span>
-            <CalendarIcon className="h-4 w-4 text-[#1a6db5]" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto rounded-[12px] border border-[#d7e4ef] bg-white p-0 shadow-md">
-          <Calendar
-            mode="single"
-            selected={value}
-            onSelect={(date) => {
-              onChange?.(date);
-              setOpen(false);
-            }}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
+    <div className="rounded-[16px] border border-[#d0dae6] bg-[#eef2f6] px-4 py-4 text-[17px] leading-[1.2] text-[#334b69]">
+      {text}
     </div>
   );
 }
 
 export default function PostPropertyPage() {
-  const [propertyImages, setPropertyImages] = useState<File[]>([]);
-  const [availableFrom, setAvailableFrom] = useState<Date | undefined>(
-    new Date("2026-05-01")
-  );
+  const [propertyType, setPropertyType] = useState("");
+  const [intent, setIntent] = useState("");
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const [showIntentMenu, setShowIntentMenu] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
-  const uploadSummary = useMemo(() => {
-    if (!propertyImages.length) return "No images selected";
-    if (propertyImages.length === 1) return propertyImages[0].name;
-    return `${propertyImages.length} images selected`;
-  }, [propertyImages]);
+  function handleSubmitToSourceQueue() {
+    const isLoggedIn = localStorage.getItem("preleasehub:isLoggedIn") === "true";
 
-  function handleSubmit() {
-    // handle form submission
+    if (!isLoggedIn) {
+      setAuthOpen(true);
+      return;
+    }
+
+    // TODO: replace with actual submit flow.
+    console.log("Property submitted to source queue.");
   }
 
   return (
-    <main id="main" className="min-h-screen bg-[#f5f9fd]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-
-        {/* Page Header */}
-        <header className="mb-8 text-center">
-          <h1 className="font-display text-4xl font-bold tracking-tight text-[#0f3557]">
-            Post Your Property
-          </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-[17px] text-slate-500">
-            Easily list your property and connect with verified buyers and investors.
-          </p>
-        </header>
-
-        {/* Form Card */}
-        <section className="rounded-[20px] border border-[#d7e4ef] bg-white p-6 shadow-[0_16px_32px_rgba(3,13,30,0.08)] md:p-8">
-
-          {/* Progress Bar */}
-          <div className="mb-7 flex items-center gap-3.5 rounded-2xl border border-[#d7e4ef] bg-[#f3f8fd] px-4 py-3.5">
-            <span className="rounded-full bg-[#0f3557] px-4 py-1.5 text-xs font-medium text-white">
-              Property Details
+    <main id="main" className="min-h-screen bg-[#f5f5f5]">
+      <div className="mx-auto w-full max-w-[1260px] px-5 pb-16 pt-16 lg:px-8">
+        <section className="grid gap-10 lg:grid-cols-[1fr_560px] lg:items-start">
+          <div className="pt-1">
+            <span className="inline-flex rounded-full bg-[#020a25] px-3 py-1 text-[16px] font-semibold leading-none text-white">
+              List Property
             </span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#dce9f5]">
-              <div className="h-1.5 w-full rounded-full bg-[#1a6db5]" />
+
+            <h1 className="mt-6 max-w-[680px] text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-[#020a25] sm:text-5xl lg:text-[54px]">
+              List verified hospitality assets for sale or rent
+            </h1>
+
+            <p className="mt-5 max-w-[760px] text-[18px] leading-[1.45] text-[#4b607d]">
+              This seller flow is built for owners who want a trusted platform and strong
+              operator closure support within 45 days for suitable assets.
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <Pill text="Intent: Sell / Lease / Both" />
+              <Pill text="Verification-ready field capture" />
+              <Pill text="Investor-facing commercial data" />
+              <Pill text="Operator-fit asset screening" />
             </div>
-            <span className="text-xs font-medium text-[#2b74b5]">Single Step Form</span>
           </div>
 
-          <div className="space-y-5">
+          <form className="rounded-[30px] border border-[#d5dee9] bg-[#f5f6f8] p-5 shadow-[0_12px_30px_rgba(22,31,53,0.06)] sm:p-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <input className={inputClass} placeholder="Owner / Company Name" />
+              <input className={inputClass} placeholder="Phone Number" />
+              <input className={inputClass} placeholder="Email Address" />
+              <input className={inputClass} placeholder="Property Name" />
 
-            {/* Location */}
-            <div>
-              <SectionLabel>Location</SectionLabel>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <FieldLabel required>City</FieldLabel>
-                  <Select defaultValue="surat">
-                    <SelectTrigger className={SELECT_TRIGGER_CLS}>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent className={SELECT_CONTENT_CLS}>
-                      {CITIES.map((c) => (
-                        <SelectItem key={c.value} value={c.value} className={SELECT_ITEM_CLS}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <InputField
-                  label="Locality"
-                  requiredMark
-                  placeholder="e.g. Sector 44"
-                  defaultValue="sec-44"
-                />
-              </div>
-            </div>
-
-            {/* Property Info */}
-            <div>
-              <SectionLabel>Property Info</SectionLabel>
-              <div className="grid gap-4 md:grid-cols-2">
-                <InputField
-                  label="Landmark"
-                  placeholder="near delight"
-                  defaultValue="near delight"
-                />
-                <div>
-                  <FieldLabel required>Property Type</FieldLabel>
-                  <Select defaultValue="hotel">
-                    <SelectTrigger className={SELECT_TRIGGER_CLS}>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className={SELECT_CONTENT_CLS}>
-                      {PROPERTY_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value} className={SELECT_ITEM_CLS}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Floor & Tenant */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <FieldLabel>Floor</FieldLabel>
-                <Select defaultValue="1st">
-                  <SelectTrigger className={SELECT_TRIGGER_CLS}>
-                    <SelectValue placeholder="Select floor" />
-                  </SelectTrigger>
-                  <SelectContent className={SELECT_CONTENT_CLS}>
-                    {FLOORS.map((f) => (
-                      <SelectItem key={f.value} value={f.value} className={SELECT_ITEM_CLS}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <FieldLabel required>Tenant Type</FieldLabel>
-                <Select defaultValue="luxury-retail">
-                  <SelectTrigger className={SELECT_TRIGGER_CLS}>
-                    <SelectValue placeholder="Select tenant type" />
-                  </SelectTrigger>
-                  <SelectContent className={SELECT_CONTENT_CLS}>
-                    {TENANT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value} className={SELECT_ITEM_CLS}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Area */}
-            <div>
-              <SectionLabel>Area &amp; Availability</SectionLabel>
-              <div className="grid gap-4 md:grid-cols-2">
-                <InputField
-                  label="Carpet Area (sq ft)"
-                  requiredMark
-                  type="number"
-                  placeholder="1000"
-                  defaultValue="1000"
-                />
-                <InputField
-                  label="Super Built-up Area (sq ft)"
-                  requiredMark
-                  type="number"
-                  placeholder="1200"
-                  defaultValue="1200"
-                />
-              </div>
-            </div>
-
-            {/* Age & Availability */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <FieldLabel>Age of Property</FieldLabel>
-                <Select defaultValue="3-5">
-                  <SelectTrigger className={SELECT_TRIGGER_CLS}>
-                    <SelectValue placeholder="Select age" />
-                  </SelectTrigger>
-                  <SelectContent className={SELECT_CONTENT_CLS}>
-                    {AGE_OPTIONS.map((a) => (
-                      <SelectItem key={a.value} value={a.value} className={SELECT_ITEM_CLS}>
-                        {a.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <CalendarField
-                label="Available From"
-                requiredMark
-                value={availableFrom}
-                onChange={setAvailableFrom}
+              <SelectBox
+                value={propertyType}
+                placeholder="Property Type"
+                open={showTypeMenu}
+                onToggle={() => {
+                  setShowTypeMenu((prev) => !prev);
+                  setShowIntentMenu(false);
+                }}
+                onSelect={(item) => {
+                  setPropertyType(item);
+                  setShowTypeMenu(false);
+                }}
+                options={["Hotel", "Resort", "Villa", "Service Apartment", "Holiday Home"]}
               />
+
+              <input className={inputClass} placeholder="City" />
+
+              <SelectBox
+                value={intent}
+                placeholder="Intent"
+                open={showIntentMenu}
+                onToggle={() => {
+                  setShowIntentMenu((prev) => !prev);
+                  setShowTypeMenu(false);
+                }}
+                onSelect={(item) => {
+                  setIntent(item);
+                  setShowIntentMenu(false);
+                }}
+                options={["Sell", "Lease", "Both"]}
+              />
+
+              <input className={inputClass} placeholder="Expected Sale Price / Rent" />
+              <input className={inputClass} placeholder="Rooms / Keys" />
+              <input className={inputClass} placeholder="Current Occupancy %" />
+              <input className={inputClass} placeholder="Current Monthly Income" />
+              <input className={inputClass} placeholder="Full Address" />
             </div>
 
-            {/* Pricing & Images */}
-            <div>
-              <SectionLabel>Pricing &amp; Images</SectionLabel>
-              <div className="flex flex-col gap-4 md:flex-row md:items-end">
-                <div className="flex-[7]">
-                  <InputField
-                    label="Basic Selling Price"
-                    requiredMark
-                    type="number"
-                    defaultValue="10"
-                  />
-                </div>
+            <label className="mt-4 flex h-[126px] w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-[#c8d3e2] bg-[#f5f7fa] text-center">
+              <Upload className="h-6 w-6 text-[#5e728c]" />
+              <p className="mt-3 text-[17px] font-medium leading-none text-[#3a4f6b]">
+                Upload property photos and documents
+              </p>
+              <p className="mt-2 text-[14px] text-[#7a8da7]">
+                Images, lease copies, ownership proof, brochures
+              </p>
+              <input type="file" className="hidden" multiple />
+            </label>
 
-                <div className="flex-[2]">
-                  <FieldLabel>Unit</FieldLabel>
-                  <Select defaultValue="crore">
-                    <SelectTrigger className={SELECT_TRIGGER_CLS}>
-                      <SelectValue placeholder="Unit" />
-                    </SelectTrigger>
-                    <SelectContent className={SELECT_CONTENT_CLS}>
-                      {PRICE_UNITS.map((u) => (
-                        <SelectItem key={u.value} value={u.value} className={SELECT_ITEM_CLS}>
-                          {u.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex-[3]">
-                  <FieldLabel required>Property Images</FieldLabel>
-                  <label
-                    htmlFor="property-images"
-                    className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-[#b8d2e6] bg-[#f4f9fe] px-3 text-center text-[13px] font-medium text-[#1f5e8f] transition hover:bg-[#edf6ff]"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 1v10M4 5l4-4 4 4M2 13h12" stroke="#1f5e8f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Upload images
-                  </label>
-                  <input
-                    id="property-images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) =>
-                      setPropertyImages(e.target.files ? Array.from(e.target.files) : [])
-                    }
-                    className="hidden"
-                  />
-                  <p className="mt-1.5 line-clamp-1 text-xs text-slate-500">{uploadSummary}</p>
-                </div>
-              </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={handleSubmitToSourceQueue}
+                className="h-12 rounded-[18px] bg-[#020a25] text-[15px] font-medium text-white transition hover:opacity-95"
+              >
+                Submit to Source Queue
+              </button>
+              <button
+                type="button"
+                className="h-12 rounded-[18px] border border-[#c9d4e3] bg-[#f7f8fa] text-[15px] font-medium text-[#111827] transition hover:bg-white"
+              >
+                WhatsApp Seller Desk
+              </button>
             </div>
-
-          </div>
-
-          {/* Footer */}
-          <hr className="my-6 border-[#e8f0f8]" />
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              className="rounded-[10px] border border-[#b9d2e6] bg-white px-6 py-2.5 text-sm font-medium text-[#0f3557] transition hover:bg-[#eef6ff]"
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="flex items-center gap-2 rounded-[10px] bg-[#0f3557] px-7 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 8h12M10 4l4 4-4 4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Submit Property
-            </button>
-          </div>
-
+          </form>
         </section>
       </div>
+
+      <AuthPopup
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        defaultTab="login"
+      />
     </main>
   );
 }

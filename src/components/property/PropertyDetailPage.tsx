@@ -73,7 +73,7 @@ export default function PropertyDetailPage({
 
           <div className="absolute inset-x-0 bottom-0 p-4 sm:p-8">
             <div className="mb-4 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-800 backdrop-blur">
-              {property.source === "investment" ? "Investment Property" : "Listing Property"}
+              Listing Property
             </div>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>

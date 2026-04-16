@@ -10,10 +10,11 @@ import {
 import { useRef } from "react";
 import {
   ArrowUpRight,
-  Building2,
-  CircleCheck,
-  Landmark,
+  Users,
   ShieldCheck,
+  KeyRound,
+  BadgeCheck,
+  Zap
 } from "lucide-react";
 
 import featuredImage from "@/src/assets/images/best_deals.png";
@@ -38,29 +39,32 @@ const cardVariants: Variants = {
 
 /* ─── data ─────────────────────────────────────────────── */
 const AUDIENCE = [
-  {
-    title: "For Property Owners",
-    text: "List hotels, resorts, villas, and serviced apartments to reach serious buyers and investors.",
-    cta: "Seller Journey",
-    href: "/about",
-    icon: Building2,
+   {
+    title: "Verified Asset Discovery",
+    text: "Every listing is carefully vetted to ensure credibility, so users explore only high-trust hospitality opportunities instead of random, unverified properties.",
+    icon: ShieldCheck,
   },
   {
-    title: "For Investors",
-    text: "Explore income-led opportunities built around occupancy, yield, and capital appreciation.",
-    cta: "Investor Journey",
-    href: "/investor/offering",
-    icon: Landmark,
+    title: "Direct Owner Connection",
+    text: "Connect directly with property owners, eliminating unnecessary intermediaries and enabling faster, more transparent deal conversations.",
+    icon: Users,
   },
   {
-    title: "For Hoteliers / Lessees",
-    text: "Lease ready hospitality spaces and operate with minimal setup friction.",
-    cta: "Operator Journey",
-    href: "/listings?intent=lease",
-    icon: CircleCheck,
+    title: "Faster Closure Support",
+    text: "Streamlined workflows and active support help investors, operators, and owners move from discovery to deal closure with greater efficiency.",
+    icon: Zap,
+  },
+  {
+    title: "Pre-Leased Opportunity Access",
+    text: "Explore income-ready hospitality assets designed for investors seeking stable returns through pre-leased and operational properties.",
+    icon: KeyRound,
+  },
+  {
+    title: "Trusted Platform Experience",
+    text: "Built to reduce friction, improve trust, and deliver a premium, professional experience across every stage of hospitality deal discovery.",
+    icon: BadgeCheck,
   },
 ];
-
 const FEATURED = [
   {
     title: "31-Key Running Hotel",
@@ -184,17 +188,15 @@ export default function FeaturesSection() {
             animate={audIn ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="font-display text-3xl font-bold tracking-tight text-(--navy) sm:text-4xl md:text-5xl lg:text-[3.2rem]">
-              Designed around sellers,<br />
-              <span className="italic text-(--ink-900)">investors</span>, and operators
+            <h2 className="font-display text-3xl max-w-4xl font-bold tracking-tight text-(--navy) sm:text-4xl md:text-5xl lg:text-[3.2rem]">
+              A trusted hospitality marketplace built for faster, better-quality deal closure
             </h2>
             <p className="mt-4 max-w-2xl text-base text-(--slate-500)">
-              Instead of a generic property portal, PreleaseHub speaks each stakeholder&apos;s language
-              with clear utility paths based on intent.
+              PreleaseHub is designed to simplify hospitality transactions by giving sellers, investors, and operators one verified platform for discovery, connection, and closure.
             </p>
           </motion.div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
             {AUDIENCE.map((item, i) => (
               <motion.article
                 key={item.title}
@@ -214,13 +216,7 @@ export default function FeaturesSection() {
                 <h3 className="mt-5 font-display text-xl font-semibold text-(--navy)">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-(--slate-500)">{item.text}</p>
 
-                <Link
-                  href={item.href}
-                  className="mt-7 inline-flex items-center gap-2 rounded-full border border-(--ink-900) px-5 py-2.5 text-xs font-semibold text-(--ink-900) transition hover:bg-(--ink-900) hover:text-white"
-                >
-                  {item.cta}
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
+                
               </motion.article>
             ))}
           </div>

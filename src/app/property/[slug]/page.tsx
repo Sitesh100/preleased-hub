@@ -13,7 +13,7 @@ function getSourceFromSearchParam(
 ): PropertySource | undefined {
   const value = Array.isArray(source) ? source[0] : source;
 
-  if (value === "investment" || value === "listings") {
+  if (value === "listings") {
     return value;
   }
 
@@ -33,16 +33,11 @@ export default async function PropertyPage({
     notFound();
   }
 
-  const backHref =
-    property.source === "investment" ? "/investment" : "/listings";
-  const backLabel =
-    property.source === "investment" ? "Investment" : "Listings";
-
   return (
     <PropertyDetailPage
       property={property}
-      backHref={backHref}
-      backLabel={backLabel}
+      backHref="/listings"
+      backLabel="Listings"
     />
   );
 }

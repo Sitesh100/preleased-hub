@@ -88,7 +88,7 @@ export default function ContactFAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="mt-16 md:mt-20">
+    <section className="mt-16 md:mt-20 ">
       {/* Section header */}
       <div className="mb-10 grid gap-10 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-5">
