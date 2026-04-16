@@ -14,13 +14,23 @@ interface PropertyCardProps {
   onShare?: (property: Property) => void;
 }
 
+// Helper function to determine if price should be shown
+function shouldShowPrice(propertyStatus: string): boolean {
+  // Hide price for these statuses
+  const hidePriceForStatuses = ["Lease-Ready", "Pre-Leased", "Operational Asset"];
+  return !hidePriceForStatuses.includes(propertyStatus);
+}
+
 const PropertyCard: React.FC<PropertyCardProps> = ({
   property,
   onViewDetails,
   onContact,
   onShare,
 }) => {
-  const { id, title, city, propertyType, areaInSqFt, propertyPrice, monthlyRent, roi, imageUrl, currency } = property;
+  const { id, title, city, propertyType, areaInSqFt, propertyPrice, monthlyRent, roi, imageUrl, currency, propertyStatus, statusLabel } = property;
+  
+  const showPrice = shouldShowPrice(propertyStatus);
+  const displayStatus = statusLabel || propertyStatus;
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
@@ -29,6 +39,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       <div className="relative h-48 bg-slate-100 flex-shrink-0 overflow-hidden">
         <span className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-bold px-2 py-0.5 rounded-md tracking-wide">
           {id}
+        </span>
+        {/* Status Badge */}
+        <span className="absolute top-3 left-16 z-10 bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-0.5 rounded-md tracking-wide">
+          {displayStatus}
         </span>
         <button
           className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm text-slate-500 hover:text-blue-600 hover:bg-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200"
@@ -68,14 +82,21 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* ── Pricing table ── */}
         <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2.5 flex flex-col gap-1.5 mt-1">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500">Property Price</span>
-            <span className="font-semibold text-blue-700">{formatCurrency(propertyPrice, currency)}</span>
-          </div>
+          {/* Conditionally show Property Price */}
+          {showPrice && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500">Property Price</span>
+              <span className="font-semibold text-blue-700">{formatCurrency(propertyPrice, currency)}</span>
+            </div>
+          )}
+          
+          {/* Always show Monthly Rent */}
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500">Monthly Rent</span>
             <span className="font-semibold text-blue-700">{formatCurrency(monthlyRent, currency)}</span>
           </div>
+          
+          {/* Always show ROI */}
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500">ROI</span>
             <span className="font-bold text-slate-800">{roi.toFixed(2)}%</span>

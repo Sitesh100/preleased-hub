@@ -15,6 +15,8 @@ import {
   Sparkles,
   Maximize2,
   ShieldCheck,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 import AuthPopup from "@/src/components/auth/AuthPopup";
 import { formatCurrency, formatLocation, Property } from "@/src/types/property";
@@ -47,6 +49,22 @@ function DetailMetric({
   );
 }
 
+// Helper function to determine if price should be shown
+function shouldShowPrice(propertyStatus: string, statusLabel?: string): boolean {
+  // Check against propertyStatus
+  const hidePriceForStatuses = ["Lease-Ready", "Pre-Leased"];
+  if (hidePriceForStatuses.includes(propertyStatus)) {
+    return false;
+  }
+  
+  // Also check statusLabel as a fallback
+  if (statusLabel === "Operational Asset" || statusLabel === "Managed Inventory") {
+    return false;
+  }
+  
+  return true;
+}
+
 export default function PropertyDetailPage({
   property,
   backHref,
@@ -75,6 +93,7 @@ export default function PropertyDetailPage({
   }
 
   const location = formatLocation(property);
+  const showPrice = shouldShowPrice(property.propertyStatus, property.statusLabel);
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 py-6 pb-12 sm:px-6 sm:py-8 sm:pb-16">
@@ -137,11 +156,14 @@ export default function PropertyDetailPage({
             value={`${property.areaInSqFt.toLocaleString()} sq ft`}
             icon={<Maximize2 size={18} />}
           />
-          <DetailMetric
-            label="Property Price"
-            value={formatCurrency(property.propertyPrice, property.currency)}
-            icon={<CircleDollarSign size={18} />}
-          />
+          {/* Conditionally show Property Price */}
+          {showPrice && (
+            <DetailMetric
+              label="Property Price"
+              value={formatCurrency(property.propertyPrice, property.currency)}
+              icon={<CircleDollarSign size={18} />}
+            />
+          )}
           <DetailMetric
             label="Monthly Rent"
             value={formatCurrency(property.monthlyRent, property.currency)}
@@ -222,19 +244,40 @@ export default function PropertyDetailPage({
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                Amenities
+                Inquiry For This Deal
               </p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                {property.amenities.map((amenity) => (
-                  <span
-                    key={amenity}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700"
-                  >
-                    {amenity}
-                  </span>
-                ))}
+              <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+                Interested in this property? Reach out to our team directly via WhatsApp or send a formal inquiry.
+              </p>
+
+              <div className="mt-5 flex flex-col gap-3">
+                {/* WhatsApp Button */}
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(
+                    `Hi, I'm interested in the property: ${property.title} (ID: ${property.id}). Please share more details.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#25D366] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1ebe5d] hover:shadow-md active:scale-[0.98]"
+                >
+                  <MessageCircle size={18} />
+                  Chat on WhatsApp
+                </a>
+
+                {/* Send Inquiry Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // You can open a modal or navigate to an inquiry form here
+                    alert(`Inquiry sent for: ${property.title}`);
+                  }}
+                  className="flex items-center justify-center gap-2.5 rounded-2xl border border-blue-600 bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-700 hover:border-blue-700 hover:shadow-md active:scale-[0.98]"
+                >
+                  <Send size={17} />
+                  Send Inquiry
+                </button>
               </div>
             </section>
           </aside>

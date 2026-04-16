@@ -62,89 +62,41 @@ const BUTTONS = [
 
 export default function ContactBar() {
   return (
-    <div
-      style={{
-        background: "linear-gradient(120deg, #f0f6ff 0%, #e8f2fc 50%, #f5f9ff 100%)",
-        border: "1px solid rgba(61,127,197,0.14)",
-        borderRadius: "20px",
-        padding: "20px 28px",
-        display: "flex",
-        alignItems: "center",
-        gap: "16px",
-        flexWrap: "wrap",
-        boxShadow: "0 8px 32px rgba(61,127,197,0.08), 0 1px 3px rgba(61,127,197,0.06)",
-      }}
-    >
-      {/* label */}
-      <div style={{ flex: "1 1 auto", minWidth: 0 }}>
-        <p
-          style={{
-            margin: 0,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "rgba(15,30,60,0.45)",
-          }}
-          className="text-2xl"
-        >
+    <div className="bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50/30 border border-blue-200/30 rounded-2xl p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 shadow-[0_8px_32px_rgba(61,127,197,0.08),0_1px_3px_rgba(61,127,197,0.06)]">
+      {/* label section */}
+      <div className="flex-1 min-w-0">
+        <p className="m-0 font-bold tracking-[0.1em] uppercase text-slate-400 text-xs sm:text-sm">
           Contact Us
         </p>
-        <p
-          style={{
-            margin: "2px 0 0",
-            fontWeight: 500,
-            color: "#0f1e3c",
-            whiteSpace: "nowrap",
-          }}
-          className="text-xl"
-        >
+        <p className="mt-0.5 font-semibold text-slate-800 text-sm sm:text-base whitespace-nowrap sm:whitespace-normal">
           Let&apos;s connect we respond within 24 hrs
         </p>
       </div>
 
-      {/* divider */}
-      <div
-        style={{
-          width: "1px",
-          height: "36px",
-          background: "rgba(61,127,197,0.15)",
-          flexShrink: 0,
-        }}
-        aria-hidden
-      />
+      {/* divider - hidden on mobile, visible on sm and up */}
+      <div className="hidden sm:block w-px h-9 bg-blue-200/50 flex-shrink-0" aria-hidden />
 
       {/* buttons */}
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+      <div className="flex flex-wrap gap-2 sm:gap-2.5 w-full sm:w-auto">
         {BUTTONS.map(({ label, href, icon: Icon, accent, bg, border }) => (
           <Link
             key={label}
             href={href}
             target="_blank"
             rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 whitespace-nowrap"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "7px",
-              padding: "9px 18px",
-              borderRadius: "50px",
               border: `1px solid ${border}`,
               background: bg,
               color: accent,
-              fontSize: "13px",
-              fontWeight: 600,
-              textDecoration: "none",
-              transition: "transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease",
-              whiteSpace: "nowrap",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 6px 20px ${border}`;
               (e.currentTarget as HTMLAnchorElement).style.background = bg.replace("0.08", "0.14");
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = `0 6px 20px ${border}`;
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
               (e.currentTarget as HTMLAnchorElement).style.background = bg;
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
             }}
           >
             <Icon />

@@ -122,20 +122,7 @@ export default function About() {
             </motion.div>
 
             {/* Contact links */}
-            <motion.div variants={stagger(0.08)} className="mt-1 flex flex-col gap-3">
-              {CONTACT_LINKS.map(({ icon: Icon, label, href }) => (
-                <motion.a
-                  key={label}
-                  href={href}
-                  variants={fadeUp}
-                  whileHover={{ x: 3, transition: { duration: 0.2 } }}
-                  className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm font-medium text-[#1a3357] shadow-sm transition hover:border-[#4a7fb5]/40 hover:shadow-md"
-                >
-                  <Icon size={17} className="shrink-0 text-[#4a7fb5]" />
-                  <span>{label}</span>
-                </motion.a>
-              ))}
-            </motion.div>
+            
           </motion.div>
 
           {/* ── RIGHT COLUMN — single tall card ── */}
