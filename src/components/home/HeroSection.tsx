@@ -4,7 +4,7 @@ import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform, type Transition, type MotionProps } from "framer-motion";
-import { ArrowRight, BadgeCheck, TrendingUp, Building2 } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 import bannerImage from "@/src/assets/images/home.png";
 
@@ -17,21 +17,15 @@ const fadeUp = (delay = 0): Pick<MotionProps, "initial" | "animate" | "transitio
   transition: { duration: 0.7, ease: EASE, delay } satisfies Transition,
 });
 
-const STATS = [
-  { value: "₹3.1Cr+", label: "Featured asset value" },
-  { value: "8–9%",    label: "Avg. estimated yield" },
-  { value: "65–72%",  label: "Occupancy range" },
-  { value: "100%",    label: "Hospitality focused" },
-];
-
-const PILLS = [
-  { icon: BadgeCheck,  text: "Verified Assets" },
-  { icon: TrendingUp,  text: "Income-Backed Opportunities" },
-  { icon: Building2,   text: "Hotels · Resorts · Villas" },
+const TRUST_BADGES = [
+  "Verified listings",
+  "Trusted platform",
+  "45-day operator deal support",
+  "Direct owner connection",
 ];
 
 export default function HeroSection() {
-  const ref  = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
 
@@ -41,6 +35,7 @@ export default function HeroSection() {
       className="noise-overlay hero-mesh relative overflow-hidden text-[var(--ink-900)]"
       style={{ minHeight: "100vh" }}
     >
+      {/* bg orbs */}
       <div className="pointer-events-none absolute -right-48 -top-48 h-[600px] w-[600px] rounded-full border border-[var(--brand-blue-400)]/10 opacity-60" />
       <div className="pointer-events-none absolute -left-28 top-20 h-[280px] w-[280px] rounded-full bg-[var(--brand-blue-400)]/10 blur-3xl" />
 
@@ -48,80 +43,59 @@ export default function HeroSection() {
 
         {/* ── LEFT copy column ── */}
         <div className="flex flex-col">
-          {/* eyebrow */}
-          <motion.div {...fadeUp(0)} className="mb-6 flex items-center gap-2">
-            <span className="h-px w-8 bg-[var(--ink-900)]" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ink-900)]/70">
-              India&apos;s Hospitality Asset Marketplace
-            </span>
-          </motion.div>
 
-          {/* headline — 3 lines */}
+       
+
+          {/* headline */}
           <motion.h1
             {...fadeUp(0.1)}
-            className="font-display text-[2.8rem] font-bold leading-[0.98] tracking-[-0.02em] text-[var(--ink-900)] sm:text-[3.3rem] lg:text-[3.6rem] xl:text-[4.2rem]"
+            className="font-display text-[2.8rem] font-bold leading-[1.02] tracking-[-0.02em] text-[var(--ink-900)] sm:text-[3.3rem] lg:text-[3.8rem] xl:text-[4.4rem]"
           >
-            Own Hospitality Assets<br />
-            That{" "}<span className="bg-gradient-to-r from-[var(--ink-900)] via-[var(--brand-blue-700)] to-[var(--brand-blue-500)] bg-clip-text italic text-transparent">Generate</span><br />
-            Income from Day One
+            Verified marketplace for sellers, investors, and hospitality operators.
           </motion.h1>
 
           {/* sub */}
           <motion.p
             {...fadeUp(0.2)}
-            className="mt-5 max-w-lg text-base leading-7 text-[var(--ink-700)] lg:mt-6 lg:text-lg"
+            className="mt-5 max-w-xl text-base leading-7 text-[var(--ink-700)] lg:mt-6 lg:text-lg"
           >
-            Buy, lease, or list hotels, resorts, villas, and serviced apartments
-            through a platform built around verified hospitality economics and
-            investor confidence.
+            Sellers can list hospitality assets for sale or rent, investors can discover
+            pre-leased opportunities, and operators can connect directly with verified
+            owners — all on one trusted platform.
           </motion.p>
 
-          {/* pills */}
-          <motion.div {...fadeUp(0.28)} className="mt-7 flex flex-wrap gap-2">
-            {PILLS.map(({ icon: Icon, text }) => (
+          {/* CTA buttons */}
+          <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link
+              href="/listings/preleased"
+              className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--ink-900)] shadow-[0_18px_38px_rgba(13,15,20,0.14)] border border-[var(--ink-900)]/10 transition hover:bg-[var(--brand-blue-50)] hover:border-[var(--ink-900)]/20"
+            >
+              PreLeased Property
+            </Link>
+            <Link
+              href="/lease"
+              className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--ink-900)] shadow-[0_18px_38px_rgba(13,15,20,0.14)] border border-[var(--ink-900)]/10 transition hover:bg-[var(--brand-blue-50)] hover:border-[var(--ink-900)]/20"
+            >
+              Want to Lease
+            </Link>
+            <Link
+              href="/sell"
+              className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--ink-900)] shadow-[0_18px_38px_rgba(13,15,20,0.14)] border border-[var(--ink-900)]/10 transition hover:bg-[var(--brand-blue-50)] hover:border-[var(--ink-900)]/20"
+            >
+              Want to Sell / Lease / Operate
+            </Link>
+          </motion.div>
+
+          {/* trust badges — 2×2 grid */}
+          <motion.div {...fadeUp(0.4)} className="mt-7 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            {TRUST_BADGES.map((badge) => (
               <span
-                key={text}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--brand-blue-200)] bg-white/80 px-4 py-1.5 text-xs font-medium text-[var(--ink-700)] shadow-[0_10px_30px_rgba(61,127,197,0.08)] backdrop-blur"
+                key={badge}
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-blue-200)] bg-white/80 px-4 py-2 text-xs font-medium text-[var(--ink-700)] shadow-[0_10px_30px_rgba(61,127,197,0.08)] backdrop-blur"
               >
-                <Icon className="h-3 w-3 text-[var(--ink-900)]" />
-                {text}
+                <CheckCircle className="h-3.5 w-3.5 shrink-0 text-[var(--ink-900)]" />
+                {badge}
               </span>
-            ))}
-          </motion.div>
-
-          {/* CTAs */}
-          <motion.div {...fadeUp(0.35)} className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link
-              href="/listings"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--ink-900)] px-7 py-3 text-sm font-semibold text-white shadow-[0_18px_38px_rgba(13,15,20,0.2)] transition hover:bg-[var(--ink-700)]"
-            >
-              Explore Investments
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/about"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--ink-900)]/12 bg-white/85 px-7 py-3 text-sm font-medium text-[var(--ink-900)] shadow-[0_12px_32px_rgba(61,127,197,0.08)] backdrop-blur transition hover:border-[var(--ink-900)]/20 hover:bg-white"
-            >
-              List Your Property
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--brand-blue-200)] bg-[var(--brand-blue-50)] px-7 py-3 text-sm font-medium text-[var(--ink-900)] transition hover:bg-white"
-            >
-              Lease a Space
-            </Link>
-          </motion.div>
-
-          {/* stats row */}
-          <motion.div
-            {...fadeUp(0.44)}
-            className="mt-10 grid grid-cols-2 gap-y-5 sm:grid-cols-4 sm:divide-x sm:divide-white/12"
-          >
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="pr-4 sm:px-4 sm:first:pl-0">
-                <p className="font-display text-2xl font-semibold text-[var(--ink-900)]">{value}</p>
-                <p className="mt-1 text-[10px] uppercase tracking-wide text-[var(--ink-900)]/45">{label}</p>
-              </div>
             ))}
           </motion.div>
         </div>
@@ -149,43 +123,49 @@ export default function HeroSection() {
             {/* gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-[var(--ink-900)]/55 via-transparent to-transparent" />
 
-            {/* featured card */}
+            {/* featured card — now matching screenshot layout */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
-              className="absolute bottom-3 left-3 right-3 rounded-2xl border border-white/70 bg-white/88 p-4 shadow-[0_24px_48px_rgba(13,15,20,0.12)] backdrop-blur-md sm:bottom-5 sm:left-5 sm:right-5 sm:p-5"
+              className="absolute bottom-3 left-3 right-3 rounded-2xl border border-white/20 bg-[var(--ink-900)]/88 p-5 shadow-[0_24px_48px_rgba(13,15,20,0.3)] backdrop-blur-md sm:bottom-5 sm:left-5 sm:right-5"
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              {/* card header */}
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-[var(--brand-blue-700)]">Featured Asset</p>
-                  <p className="mt-1 font-display text-lg font-semibold text-[var(--ink-900)]">Running Hotel – Indore</p>
-                  <p className="mt-0.5 text-xs text-[var(--ink-700)]">Vijay Nagar, Indore · 31 keys</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50">
+                    Structured asset
+                  </p>
+                  <p className="mt-1 font-display text-xl font-bold text-white leading-tight">
+                    Running Hotel •<br />Indore
+                  </p>
                 </div>
-                <span className="rounded-full bg-[var(--ink-900)] px-3 py-1 text-[10px] font-semibold text-white">
-                  Pre-Leased
+                <span className="shrink-0 rounded-full border border-white/30 bg-white/15 px-3.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur">
+                  Secured
                 </span>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {/* 2×2 stats grid */}
+              <div className="mt-4 grid grid-cols-2 gap-2.5">
                 {[
-                  ["Yield",     "8%+"],
-                  ["Occupancy", "65–70%"],
-                  ["Price",     "₹3.1 Cr"],
+                  ["Monthly Rent", "₹5L"],
+                  ["Lock-in", "9 years"],
+                  ["Deposit", "6 months"],
+                  ["Escalation", "15% / 3 years"],
                 ].map(([k, v]) => (
-                  <div key={k} className="rounded-xl border border-[var(--brand-blue-100)] bg-[var(--brand-blue-50)] p-2.5 text-center">
-                    <p className="text-[10px] text-[var(--ink-700)]/70">{k}</p>
-                    <p className="mt-0.5 text-sm font-semibold text-[var(--ink-900)]">{v}</p>
+                  <div
+                    key={k}
+                    className="rounded-xl border border-white/10 bg-white/8 p-3"
+                  >
+                    <p className="text-[10px] font-medium text-white/45">{k}</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{v}</p>
                   </div>
                 ))}
               </div>
-
-              <button className="mt-4 w-full rounded-full bg-[var(--ink-900)] py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ink-700)]">
-                View Deal →
-              </button>
             </motion.div>
           </div>
         </motion.div>
+
       </div>
 
       {/* bottom fade */}

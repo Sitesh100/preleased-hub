@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import { Roboto, Cormorant_Garamond } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/shared/Navbar";
 import Footer from "../components/shared/Footer";
 
 const roboto = Roboto({
-  variable: "--font-sans",
+  variable: "--font-roboto",
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
-});
-
-const cormorantGaramond = Cormorant_Garamond({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -29,8 +23,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${roboto.variable} ${cormorantGaramond.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      className={`${roboto.variable} h-full antialiased`}>
+      <body className={`${roboto.className} min-h-full flex flex-col`}>
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
