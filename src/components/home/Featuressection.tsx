@@ -154,32 +154,10 @@ export default function FeaturesSection() {
 
   return (
     <>
-      {/* ─── INFO STRIP ────────────────────────────────────── */}
-      <div ref={gridRef} className="bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(229,238,249,0.5))]">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-8 sm:grid-cols-2 sm:px-6 md:grid-cols-4 lg:px-12">
-          {[
-            ["How We Support", "Buyers / Investors / Operators"],
-            ["Asset Classes", "Hotels · Resorts · Villas · Service Apts"],
-            ["Built For", "Owners · Investors · Operators"],
-            ["Core Promise", "Income-led property discovery"],
-          ].map(([label, value], i) => (
-            <motion.article
-              key={label}
-              variants={cardVariants}
-              initial="hidden"
-              animate={gridIn ? "visible" : "hidden"}
-              custom={i}
-              className="rounded-2xl border border-(--brand-blue-100) bg-white/85 p-5 shadow-[0_18px_40px_rgba(61,127,197,0.08)] backdrop-blur"
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-(--slate-400)">{label}</p>
-              <p className="mt-2 text-sm font-medium text-(--navy)">{value}</p>
-            </motion.article>
-          ))}
-        </div>
-      </div>
+     
 
       {/* ─── AUDIENCE CARDS ────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-12 lg:py-20">
+      <section className="mx-auto max-w-[1500px] px-4 py-14 sm:px-6 sm:py-16 lg:px-12 lg:py-20">
         <div ref={audRef}>
           <SectionLabel>Owner · Investor · Operator</SectionLabel>
 
@@ -188,7 +166,7 @@ export default function FeaturesSection() {
             animate={audIn ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="font-display text-3xl max-w-4xl font-bold tracking-tight text-(--navy) sm:text-4xl md:text-5xl lg:text-[3.2rem]">
+            <h2 className="font-display text-3xl max-w-6xl font-bold tracking-tight text-(--navy) sm:text-4xl md:text-5xl lg:text-[3.2rem]">
               A trusted hospitality marketplace built for faster, better-quality deal closure
             </h2>
             <p className="mt-4 max-w-2xl text-base text-(--slate-500)">
@@ -378,7 +356,6 @@ export default function FeaturesSection() {
 
             <div className="mt-10 space-y-3">
               {[
-                "Verified hospitality assets",
                 "Transparent hospitality positioning",
                 "Income investment modeling",
                 "Premium buyer and operator activation",

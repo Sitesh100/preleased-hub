@@ -1,6 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Building2,
@@ -12,6 +16,7 @@ import {
   Maximize2,
   ShieldCheck,
 } from "lucide-react";
+import AuthPopup from "@/src/components/auth/AuthPopup";
 import { formatCurrency, formatLocation, Property } from "@/src/types/property";
 
 interface PropertyDetailPageProps {
@@ -47,6 +52,28 @@ export default function PropertyDetailPage({
   backHref,
   backLabel,
 }: PropertyDetailPageProps) {
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("preleasehub:isLoggedIn") === "true";
+  });
+
+  if (!isLoggedIn) {
+    return (
+      <>
+        <AuthPopup
+          isOpen
+          onClose={() => router.push(backHref)}
+          defaultTab="login"
+          onLoginSuccess={() => setIsLoggedIn(true)}
+        />
+        <main className="mx-auto max-w-[1240px] px-4 py-16 sm:px-6">
+          <p className="text-sm text-slate-500">Login required to view property details.</p>
+        </main>
+      </>
+    );
+  }
+
   const location = formatLocation(property);
 
   return (

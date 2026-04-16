@@ -67,19 +67,19 @@ export default function HeroSection() {
           {/* CTA buttons */}
           <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link
-              href="/listings/preleased"
+              href="/listings?intent=preleased"
               className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--ink-900)] shadow-[0_18px_38px_rgba(13,15,20,0.14)] border border-[var(--ink-900)]/10 transition hover:bg-[var(--brand-blue-50)] hover:border-[var(--ink-900)]/20"
             >
               PreLeased Property
             </Link>
             <Link
-              href="/lease"
+              href="/listings?intent=lease"
               className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--ink-900)] shadow-[0_18px_38px_rgba(13,15,20,0.14)] border border-[var(--ink-900)]/10 transition hover:bg-[var(--brand-blue-50)] hover:border-[var(--ink-900)]/20"
             >
               Want to Lease
             </Link>
             <Link
-              href="/sell"
+              href="/listings?intent=sell"
               className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--ink-900)] shadow-[0_18px_38px_rgba(13,15,20,0.14)] border border-[var(--ink-900)]/10 transition hover:bg-[var(--brand-blue-50)] hover:border-[var(--ink-900)]/20"
             >
               Want to Sell / Lease / Operate

@@ -7,6 +7,7 @@ import FilterBar, {
   FilterState,
 } from "@/src/components/listings/FilterBar";
 import PropertyCard from "@/src/components/listings/PropertyCard";
+import AuthPopup from "@/src/components/auth/AuthPopup";
 import { Property, PropertySource, PropertyStatus } from "@/src/types/property";
 
 function applyFilters(properties: Property[], filters: FilterState): Property[] {
@@ -63,17 +64,32 @@ interface PropertyBrowserProps {
   properties: Property[];
   source: PropertySource;
   emptyMessage?: string;
+  initialIntent?: string | null;
+}
+
+function getStatusFromIntent(intent?: string | null): PropertyStatus {
+  const normalizedIntent = intent?.toLowerCase().trim();
+
+  if (normalizedIntent === "lease") return "Lease-Ready";
+  if (normalizedIntent === "sell" || normalizedIntent === "sale") return "Sale";
+  return "Pre-Leased";
 }
 
 export default function PropertyBrowser({
   properties,
   source,
   emptyMessage = "No properties match your filters.",
+  initialIntent = null,
 }: PropertyBrowserProps) {
   const router = useRouter();
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [pendingDetailProperty, setPendingDetailProperty] = useState<Property | null>(null);
+  const initialStatus = getStatusFromIntent(initialIntent);
+  const initialFilters = { ...defaultFilters, propertyStatus: initialStatus };
+
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [appliedFilters, setAppliedFilters] =
-    useState<FilterState>(defaultFilters);
+    useState<FilterState>(initialFilters);
 
   const filteredProperties = useMemo(
     () => applyFilters(properties, appliedFilters),
@@ -90,12 +106,38 @@ export default function PropertyBrowser({
     setAppliedFilters((prev) => ({ ...prev, propertyStatus: status }));
   }
 
-  function handleViewDetails(property: Property) {
+  function isLoggedIn(): boolean {
+    return localStorage.getItem("preleasehub:isLoggedIn") === "true";
+  }
+
+  function openPropertyDetails(property: Property) {
     router.push(`/property/${property.slug}?source=${source}`);
   }
 
+  function handleViewDetails(property: Property) {
+    if (!isLoggedIn()) {
+      setPendingDetailProperty(property);
+      setAuthOpen(true);
+      return;
+    }
+
+    openPropertyDetails(property);
+  }
+
   function handleContact(property: Property) {
-    console.log("Contact for:", property.id);
+    const message = `Hi PreleaseHub, please share full structured details for ${property.title} in ${property.city}.`;
+    const whatsappUrl = `https://api.whatsapp.com/send/?phone=917566663242&text=${encodeURIComponent(
+      message
+    )}&type=phone_number&app_absent=0`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function handleLoginSuccess() {
+    if (!pendingDetailProperty) return;
+
+    openPropertyDetails(pendingDetailProperty);
+    setPendingDetailProperty(null);
   }
 
   function handleShare(property: Property) {
@@ -147,6 +189,13 @@ export default function PropertyBrowser({
           ))}
         </div>
       )}
+
+      <AuthPopup
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        defaultTab="login"
+        onLoginSuccess={handleLoginSuccess}
+      />
     </main>
   );
 }
