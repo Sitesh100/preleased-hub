@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, X, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 
 type Tab = 'login' | 'signup';
-type UserType = 'Seller' | 'Buyer' | 'Investor';
+type UserType = 'Seller' | 'Buyer' | 'Lessee';
 
 interface AuthPopupProps {
   isOpen: boolean;
@@ -21,7 +21,6 @@ export default function AuthPopup({
 }: AuthPopupProps) {
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [userType, setUserType] = useState<UserType>('Seller');
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -33,7 +32,7 @@ export default function AuthPopup({
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [signupPhone, setSignupPhone] = useState('');
 
   if (!isOpen) return null;
 
@@ -42,7 +41,6 @@ export default function AuthPopup({
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: replace with real auth API flow.
     localStorage.setItem('preleasehub:isLoggedIn', 'true');
     console.log({ loginEmail, loginPassword, rememberMe });
     onLoginSuccess?.();
@@ -51,8 +49,7 @@ export default function AuthPopup({
 
   function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire up register API call
-    console.log({ signupName, signupEmail, userType, signupPassword, signupConfirmPassword });
+    console.log({ signupName, signupEmail, userType, signupPassword, signupPhone });
   }
 
   return (
@@ -71,7 +68,6 @@ export default function AuthPopup({
           <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <span className="text-[15px] font-semibold text-gray-900">PrereleaseHub Access</span>
-              
             </div>
             <button
               onClick={onClose}
@@ -228,7 +224,7 @@ export default function AuthPopup({
                     User Type
                   </label>
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    {(['Seller', 'Buyer', 'Investor'] as UserType[]).map((type) => (
+                    {(['Seller', 'Buyer', 'Lessee'] as UserType[]).map((type) => (
                       <label
                         key={type}
                         className={`flex flex-1 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
@@ -274,27 +270,21 @@ export default function AuthPopup({
                       </button>
                     </div>
                   </div>
+
+                  {/* ── Phone Number (replaces Confirm Password) ── */}
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                      Confirm Password
+                      Phone Number
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={signupConfirmPassword}
-                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                        className={`${inputCls} pr-10`}
-                        placeholder="••••••••"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword((p) => !p)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
+                    <input
+                      type="tel"
+                      value={signupPhone}
+                      onChange={(e) => setSignupPhone(e.target.value)}
+                      className={inputCls}
+                      placeholder="+91 98765 43210"
+                      pattern="[+]?[0-9\s\-()]{7,15}"
+                      required
+                    />
                   </div>
                 </div>
 
