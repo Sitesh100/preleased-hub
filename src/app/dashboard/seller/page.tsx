@@ -1,20 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-import LoginScreen          from '@/src/components/dashboard/LoginScreen';
 import Sidebar, { NavItem } from '@/src/components/dashboard/Sidebar';
 import Topbar               from '@/src/components/dashboard/Topbar';
 import PropertiesTab        from '@/src/components/dashboard/PropertiesTab';
 import LeadsTab             from '@/src/components/dashboard/LeadsTab';
+import {
+  clearDashboardSession,
+  DashboardSession,
+  getDashboardSession,
+} from '@/src/lib/dashboard-auth';
 
 export default function SellerDashboardPage() {
-  const [loggedIn,    setLoggedIn]    = useState(false);
+  const router = useRouter();
+  const [session,     setSession]     = useState<DashboardSession | null>(null);
   const [active,      setActive]      = useState<NavItem>('properties');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+  useEffect(() => {
+    const current = getDashboardSession();
+    if (!current || current.role !== 'seller') {
+      router.replace('/dashboard');
+      return;
+    }
+    setSession(current);
+  }, [router]);
+
+  if (!session || session.role !== 'seller') {
+    return null;
   }
 
   return (
@@ -22,9 +37,14 @@ export default function SellerDashboardPage() {
       <Sidebar
         active={active}
         onNav={setActive}
-        onLogout={() => setLoggedIn(false)}
+        onLogout={() => {
+          clearDashboardSession();
+          setSession(null);
+        }}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen((p) => !p)}
+        accountLabel="Seller Account"
+        accountEmail={session.email}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

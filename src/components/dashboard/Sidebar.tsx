@@ -11,6 +11,8 @@ interface SidebarProps {
   onLogout: () => void;
   open: boolean;
   onToggle: () => void;
+  accountLabel?: string;
+  accountEmail?: string;
 }
 
 const navItems = [
@@ -18,13 +20,21 @@ const navItems = [
   { id: 'leads'      as NavItem, label: 'Lead Inquiries', icon: MessageSquare },
 ];
 
-export default function Sidebar({ active, onNav, onLogout, open, onToggle }: SidebarProps) {
+export default function Sidebar({
+  active,
+  onNav,
+  onLogout,
+  open,
+  onToggle,
+  accountLabel = 'Seller Account',
+  accountEmail = 'seller@preleasehub.com',
+}: SidebarProps) {
   return (
     <aside
-      className={`flex-shrink-0 ${open ? 'w-56' : 'w-16'} transition-all duration-300 bg-black text-white flex flex-col`}
+      className={`shrink-0 ${open ? 'w-56' : 'w-16'} transition-all duration-300 bg-black text-white flex flex-col`}
     >
       {/* Logo / collapse toggle */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-white/10 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 h-16 border-b border-white/10 shrink-0">
         {open && (
           <span className="text-sm font-black tracking-tight truncate">PrereleaseHub</span>
         )}
@@ -40,12 +50,12 @@ export default function Sidebar({ active, onNav, onLogout, open, onToggle }: Sid
       {open && (
         <div className="px-4 py-4 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-full bg-white text-black flex items-center justify-center text-xs font-black flex-shrink-0">
-              S
+            <div className="h-8 w-8 rounded-full bg-white text-black flex items-center justify-center text-xs font-black shrink-0">
+              {accountLabel.charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold leading-tight truncate">Seller Account</p>
-              <p className="text-[10px] text-white/40 truncate">seller@preleasehub.com</p>
+              <p className="text-xs font-bold leading-tight truncate">{accountLabel}</p>
+              <p className="text-[10px] text-white/40 truncate">{accountEmail}</p>
             </div>
           </div>
         </div>
@@ -63,7 +73,7 @@ export default function Sidebar({ active, onNav, onLogout, open, onToggle }: Sid
                 : 'text-white/60 hover:bg-white/10 hover:text-white'
               }`}
           >
-            <Icon className="h-4 w-4 flex-shrink-0" />
+            <Icon className="h-4 w-4 shrink-0" />
             {open && <span className="truncate">{label}</span>}
           </button>
         ))}
@@ -75,7 +85,7 @@ export default function Sidebar({ active, onNav, onLogout, open, onToggle }: Sid
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-all"
         >
-          <LogOut className="h-4 w-4 flex-shrink-0" />
+          <LogOut className="h-4 w-4 shrink-0" />
           {open && <span>Logout</span>}
         </button>
       </div>

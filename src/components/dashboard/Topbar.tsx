@@ -17,7 +17,7 @@ export default function Topbar({ active }: TopbarProps) {
   const { heading, sub } = titles[active];
 
   return (
-    <header className="h-16 bg-white border-b border-black/10 px-6 flex items-center justify-between flex-shrink-0">
+    <header className="h-16 bg-white border-b border-black/10 px-6 flex items-center justify-between shrink-0">
       <div>
         <h1 className="text-lg font-black text-black leading-tight">{heading}</h1>
         <p className="text-xs text-gray-400">{sub}</p>

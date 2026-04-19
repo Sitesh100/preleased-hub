@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, X } from 'lucide-react';
+import {
+  authenticateDashboardUser,
+  DASHBOARD_CREDENTIALS,
+  getDashboardRoute,
+  setDashboardSession,
+} from '@/src/lib/dashboard-auth';
 
 type Tab = 'login' | 'signup';
 type UserType = 'Seller' | 'Buyer' | 'Lessee';
@@ -19,10 +26,12 @@ export default function AuthPopup({
   defaultTab = 'login',
   onLoginSuccess,
 }: AuthPopupProps) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<UserType>('Seller');
   const [rememberMe, setRememberMe] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -41,10 +50,20 @@ export default function AuthPopup({
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    localStorage.setItem('preleasehub:isLoggedIn', 'true');
-    console.log({ loginEmail, loginPassword, rememberMe });
+
+    const session = authenticateDashboardUser(loginEmail, loginPassword);
+
+    if (!session) {
+      setLoginError('Invalid credentials. Please use one of the demo accounts.');
+      return;
+    }
+
+    setDashboardSession(session);
+    console.log({ loginEmail, rememberMe, role: session.role });
     onLoginSuccess?.();
     onClose();
+
+    router.push(getDashboardRoute(session.role));
   }
 
   function handleSignup(e: React.FormEvent) {
@@ -110,9 +129,13 @@ export default function AuthPopup({
             {tab === 'login' && (
               <form onSubmit={handleLogin} className="space-y-4">
                 {/* Demo hint */}
-                <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
-                  Demo login: demo@preleasehub.com / Prelease@123
-                </p>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500 space-y-1">
+                  {DASHBOARD_CREDENTIALS.map((item) => (
+                    <p key={item.role}>
+                      {item.label}: {item.email} / {item.password}
+                    </p>
+                  ))}
+                </div>
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -121,7 +144,10 @@ export default function AuthPopup({
                   <input
                     type="email"
                     value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    onChange={(e) => {
+                      setLoginEmail(e.target.value);
+                      setLoginError('');
+                    }}
                     className={inputCls}
                     placeholder="you@example.com"
                     required
@@ -136,7 +162,10 @@ export default function AuthPopup({
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
+                      onChange={(e) => {
+                        setLoginPassword(e.target.value);
+                        setLoginError('');
+                      }}
                       className={`${inputCls} pr-10`}
                       placeholder="••••••••"
                       required
@@ -150,6 +179,10 @@ export default function AuthPopup({
                     </button>
                   </div>
                 </div>
+
+                {loginError && (
+                  <p className="text-xs font-medium text-red-600">{loginError}</p>
+                )}
 
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -294,6 +327,10 @@ export default function AuthPopup({
                 >
                   Create account
                 </button>
+
+                <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
+                  Demo signup keeps mock mode active. For dashboard access, use login with role credentials.
+                </p>
 
                 <p className="text-center text-sm text-gray-500">
                   Already have an account?{' '}

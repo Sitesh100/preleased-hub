@@ -1,81 +1,109 @@
 // src/components/dashboard/LeadsTab.tsx
 'use client';
 
-import { Search } from 'lucide-react';
+import { CalendarCheck2, RefreshCw, Users } from 'lucide-react';
 import StatCard from './StatCard';
 import Badge from './Badge';
 
-const LEADS = [
-  { id: 1, name: 'Rahul Mehta',   email: 'rahul.mehta@gmail.com', property: 'Sunrise Grand Hotel', date: '14 Apr 2026', status: 'New',       message: 'Interested in site visit this weekend.' },
-  { id: 2, name: 'Priya Sharma',  email: 'priya.s@outlook.com',   property: 'The Palm Boutique',   date: '12 Apr 2026', status: 'Contacted', message: 'Can you share the floor plan and financials?' },
-  { id: 3, name: 'Amit Joshi',    email: 'amitj@invest.co',       property: 'Green Valley Inn',    date: '10 Apr 2026', status: 'New',       message: 'What is the current occupancy rate?' },
-  { id: 4, name: 'Sonal Kapoor',  email: 'sonal.k@ventures.in',   property: 'Sunrise Grand Hotel', date: '08 Apr 2026', status: 'Closed',    message: 'Thank you, we will proceed with the deal.' },
+const CONNECT_REQUESTS = [] as {
+  id: number;
+  property: string;
+  type: string;
+  status: string;
+}[];
+
+const INTERESTED_LEADS = [
+  {
+    id: 1,
+    property: 'Pre-leased Boutique Resort, North Goa',
+    leadType: 'lease_operator',
+    budget: 'MG + Revenue Share',
+    purpose: 'lease',
+    timeline: '15 days',
+    hasMeetingRequest: false,
+    summary: 'Interested in taking over operations under a structured lease model.',
+  },
 ];
 
 export default function LeadsTab() {
   return (
     <div className="space-y-6">
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Leads"  value="4" sub="this quarter" />
-        <StatCard label="New"          value="2" sub="awaiting response" />
-        <StatCard label="Contacted"    value="1" sub="follow-up pending" />
-        <StatCard label="Closed"       value="1" sub="deal finalised" />
+        <StatCard label="Qualified Leads" value="1" sub="visible to seller" />
+        <StatCard label="Meeting Requests" value="0" sub="no pending requests" />
+        <StatCard label="Connect Requests" value="0" sub="no pending requests" />
+        <StatCard label="Shared Contacts" value="0" sub="admin approval required" />
       </div>
 
-      {/* Lead cards */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black text-black">Lead Inquiries</h2>
-
-          <div className="flex items-center gap-2 h-9 border border-black/15 rounded-xl px-3 bg-white w-48">
-            <Search className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
-            <input
-              placeholder="Search leads…"
-              className="outline-none bg-transparent text-xs text-black placeholder:text-gray-400 w-full"
-            />
+      <section className="rounded-3xl border border-black/10 bg-white p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f4f8] text-[#111827]">
+            <RefreshCw className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-black leading-tight">Connection &amp; Meeting Request Center</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Track seller-raised connect requests after admin shares a lead summary.
+            </p>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {LEADS.map((lead) => (
+        <div className="mt-5 rounded-2xl border border-dashed border-black/10 bg-[#fafafa] p-6 text-center text-sm text-gray-400">
+          {CONNECT_REQUESTS.length === 0 ? 'No connect or meeting requests yet.' : 'Requests available'}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-black/10 bg-white p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f4f8] text-[#111827]">
+            <Users className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-black leading-tight">Interested Leads Visible to Seller</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Seller sees qualified lead summary. Contact details remain hidden until admin approves connect.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {INTERESTED_LEADS.map((lead) => (
             <div
               key={lead.id}
-              className="border border-black/10 rounded-2xl p-5 bg-white hover:shadow-sm transition-shadow"
+              className="rounded-2xl border border-black/10 p-5"
             >
-              <div className="flex items-start justify-between gap-4">
-                {/* Avatar + details */}
-                <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {lead.name.split(' ').map((n) => n[0]).join('')}
-                  </div>
-                  <div>
-                    <p className="font-bold text-black text-sm">{lead.name}</p>
-                    <p className="text-xs text-gray-400">{lead.email}</p>
-                    <p className="text-xs text-gray-500 mt-2 italic">"{lead.message}"</p>
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-2xl font-black leading-tight text-black">{lead.property}</p>
+                  <p className="mt-2 text-sm text-[#5b6b84]">
+                    Lead type: {lead.leadType} • Budget: {lead.budget} • Purpose: {lead.purpose}
+                  </p>
+                  <p className="text-sm text-[#5b6b84] mt-1">
+                    Timeline: {lead.timeline} • Meeting request: {lead.hasMeetingRequest ? 'Yes' : 'No'}
+                  </p>
+                  <p className="mt-2 text-sm text-[#5b6b84]">Summary: {lead.summary}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge status="Shared" />
+                    <span className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-[#f7f8fa] px-3 py-1 text-xs text-gray-500">
+                      <CalendarCheck2 className="h-3.5 w-3.5" />
+                      Contact hidden
+                    </span>
                   </div>
                 </div>
 
-                {/* Badge + date */}
-                <div className="text-right flex-shrink-0 space-y-1.5">
-                  <Badge status={lead.status} />
-                  <p className="text-[10px] text-gray-400 block">{lead.date}</p>
+                <div className="flex items-center gap-2 md:pt-1">
+                  <button className="h-10 rounded-xl bg-black px-4 text-xs font-bold text-white transition hover:bg-gray-800">
+                    Request Connect
+                  </button>
+                  <button className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50">
+                    Request Meeting
+                  </button>
                 </div>
-              </div>
-
-              {/* Footer row */}
-              <div className="mt-3 pt-3 border-t border-black/5 flex items-center justify-between">
-                <p className="text-xs text-gray-500">
-                  Re: <span className="font-semibold text-black">{lead.property}</span>
-                </p>
-                <button className="text-xs font-semibold text-black underline underline-offset-2 hover:no-underline transition">
-                  Reply →
-                </button>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

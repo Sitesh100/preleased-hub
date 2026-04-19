@@ -245,7 +245,6 @@ export default function FeaturesSection() {
         </div>
       </section>
 
-      {/* ─── INFO GRID ────────────────────────────────────── */}
       <section className="bg-[linear-gradient(180deg,#f7faff_0%,#edf3fa_100%)] py-4">
         <div ref={gridRef} className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-12">
           {/* 4 info cards */}

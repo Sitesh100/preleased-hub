@@ -3,27 +3,42 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-
-const SELLER_EMAIL    = 'seller@preleasehub.com';
-const SELLER_PASSWORD = 'Seller@123';
+import {
+  authenticateDashboardUser,
+  DASHBOARD_CREDENTIALS,
+  DashboardRole,
+  DashboardSession,
+  roleLabel,
+} from '@/src/lib/dashboard-auth';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  expectedRole: DashboardRole;
+  onLogin: (session: DashboardSession) => void;
 }
 
-export default function LoginScreen({ onLogin }: LoginScreenProps) {
+export default function LoginScreen({ expectedRole, onLogin }: LoginScreenProps) {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [show,     setShow]     = useState(false);
   const [error,    setError]    = useState('');
 
+  const expectedLabel = roleLabel(expectedRole);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (email === SELLER_EMAIL && password === SELLER_PASSWORD) {
-      onLogin();
-    } else {
+    const session = authenticateDashboardUser(email, password);
+
+    if (!session) {
       setError('Invalid credentials. Use the demo credentials below.');
+      return;
     }
+
+    if (session.role !== expectedRole) {
+      setError(`You are trying to access the ${expectedLabel} dashboard. Please use ${expectedLabel} credentials.`);
+      return;
+    }
+
+    onLogin(session);
   }
 
   return (
@@ -41,7 +56,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
       <div className="relative w-full max-w-md mx-4">
         <div className="h-1 w-16 bg-black rounded-full mb-8" />
 
-        <h1 className="text-4xl font-black tracking-tight text-black mb-1">Seller Portal</h1>
+        <h1 className="text-4xl font-black tracking-tight text-black mb-1">{expectedLabel} Portal</h1>
         <p className="text-sm text-gray-500 mb-8">PrereleaseHub · Dashboard Access</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -54,7 +69,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(''); }}
-              placeholder="seller@preleasehub.com"
+              placeholder={`${expectedRole}@preleasehub.com`}
               className="w-full h-11 border border-black/20 rounded-xl px-4 text-sm bg-white outline-none focus:border-black focus:ring-2 focus:ring-black/10 transition"
               required
             />
@@ -99,8 +114,13 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
             Demo Credentials
           </p>
-          <p className="text-xs text-gray-700 font-mono">Email: seller@preleasehub.com</p>
-          <p className="text-xs text-gray-700 font-mono">Password: Seller@123</p>
+          <div className="space-y-1.5">
+            {DASHBOARD_CREDENTIALS.map((item) => (
+              <p key={item.role} className="text-xs text-gray-700 font-mono">
+                {item.label}: {item.email} / {item.password}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </div>
