@@ -34,9 +34,10 @@ export default function Sidebar({
       className={`shrink-0 ${open ? 'w-56' : 'w-16'} transition-all duration-300 bg-black text-white flex flex-col`}
     >
       {/* Logo / collapse toggle */}
+      
       <div className="flex items-center justify-between px-4 h-16 border-b border-white/10 shrink-0">
         {open && (
-          <span className="text-sm font-black tracking-tight truncate">PrereleaseHub</span>
+         <a href="/"> <span className="text-sm font-black tracking-tight truncate">PrereleaseHub</span></a>
         )}
         <button
           onClick={onToggle}
