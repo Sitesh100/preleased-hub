@@ -2,22 +2,39 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
 import { Eye, EyeOff, X } from 'lucide-react';
 import {
-  authenticateDashboardUser,
-  DASHBOARD_CREDENTIALS,
+  DashboardRole,
   getDashboardRoute,
+  roleLabel,
   setDashboardSession,
 } from '@/src/lib/dashboard-auth';
+import { useLoginMutation, useRegisterMutation } from '@/src/redux/features/auth/authApi';
+import { setUser } from '@/src/redux/features/auth/authSlice';
+import type { AppDispatch } from '@/src/redux/store';
 
 type Tab = 'login' | 'signup';
 type UserType = 'Seller' | 'Buyer' | 'Lessee';
+
+const REGISTER_ROLE_MAP: Record<UserType, number> = {
+  Seller: 1,
+  Buyer: 2,
+  Lessee: 3,
+};
+
+const DASHBOARD_ROLE_MAP: Record<UserType, DashboardRole> = {
+  Seller: 'seller',
+  Buyer: 'buyer',
+  Lessee: 'lessee',
+};
 
 interface AuthPopupProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: Tab;
   onLoginSuccess?: () => void;
+  redirectToDashboard?: boolean;
 }
 
 export default function AuthPopup({
@@ -25,16 +42,20 @@ export default function AuthPopup({
   onClose,
   defaultTab = 'login',
   onLoginSuccess,
+  redirectToDashboard = true,
 }: AuthPopupProps) {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const [login, loginState] = useLoginMutation();
+  const [register, registerState] = useRegisterMutation();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<UserType>('Seller');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPhone, setLoginPhone] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   // Signup form state
@@ -48,27 +69,163 @@ export default function AuthPopup({
   const inputCls =
     'w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#1a6db5] focus:ring-2 focus:ring-[#1a6db5]/10 transition';
 
-  function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-
-    const session = authenticateDashboardUser(loginEmail, loginPassword);
-
-    if (!session) {
-      setLoginError('Invalid credentials. Please use one of the demo accounts.');
-      return;
+  function getApiErrorMessage(error: unknown, fallback: string) {
+    if (typeof error === 'object' && error !== null && 'data' in error) {
+      const data = (error as { data?: { message?: string } }).data;
+      if (data?.message) {
+        return data.message;
+      }
     }
 
-    setDashboardSession(session);
-    console.log({ loginEmail, rememberMe, role: session.role });
-    onLoginSuccess?.();
-    onClose();
+    if (typeof error === 'object' && error !== null && 'error' in error) {
+      const message = (error as { error?: string }).error;
+      if (message) {
+        return message;
+      }
+    }
 
-    router.push(getDashboardRoute(session.role));
+    return fallback;
   }
 
-  function handleSignup(e: React.FormEvent) {
+  function getDashboardRole() {
+    return DASHBOARD_ROLE_MAP[userType];
+  }
+
+  function renderRoleSelector() {
+    return (
+      <div>
+        <label className="mb-2 block text-sm font-medium text-gray-700">User Type</label>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {(['Seller', 'Buyer', 'Lessee'] as UserType[]).map((type) => (
+            <label
+              key={type}
+              className={`flex flex-1 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                userType === type
+                  ? 'border-[#1a6db5] bg-[#f0f7ff] text-[#1a6db5]'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                name="userType"
+                value={type}
+                checked={userType === type}
+                onChange={() => {
+                  setUserType(type);
+                  setAuthError('');
+                  setAuthMessage('');
+                }}
+                className="accent-[#1a6db5]"
+              />
+              {type}
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    console.log({ signupName, signupEmail, userType, signupPassword, signupPhone });
+    setAuthError('');
+    setAuthMessage('');
+
+    try {
+      const response = await login({
+        phone_no: loginPhone.trim(),
+        password: loginPassword,
+      }).unwrap();
+
+      dispatch(
+        setUser({
+          token: response.access_token,
+          refreshToken: response.refresh_token,
+        }),
+      );
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('preleasehub:isLoggedIn', 'true');
+      }
+
+      const dashboardRole = getDashboardRole();
+      setDashboardSession({
+        role: dashboardRole,
+        email: loginPhone.trim(),
+        label: roleLabel(dashboardRole),
+        loggedInAt: Date.now(),
+      });
+
+      onLoginSuccess?.();
+      onClose();
+      if (redirectToDashboard) {
+        router.push(getDashboardRoute(dashboardRole));
+      }
+    } catch (error) {
+      setAuthError(getApiErrorMessage(error, 'Unable to log in. Please try again.'));
+    }
+  }
+
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthError('');
+    setAuthMessage('');
+
+    try {
+      const registerResponse = await register({
+        user_name: signupName.trim(),
+        email: signupEmail.trim(),
+        phone_no: signupPhone.trim(),
+        password: signupPassword,
+        role: REGISTER_ROLE_MAP[userType],
+      }).unwrap();
+
+      if (!registerResponse.status) {
+        setAuthError(registerResponse.message || 'Unable to register your account.');
+        return;
+      }
+
+      try {
+        const loginResponse = await login({
+          phone_no: signupPhone.trim(),
+          password: signupPassword,
+        }).unwrap();
+
+        dispatch(
+          setUser({
+            token: loginResponse.access_token,
+            refreshToken: loginResponse.refresh_token,
+          }),
+        );
+
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('preleasehub:isLoggedIn', 'true');
+        }
+
+        const dashboardRole = getDashboardRole();
+        setDashboardSession({
+          role: dashboardRole,
+          email: signupPhone.trim(),
+          label: roleLabel(dashboardRole),
+          loggedInAt: Date.now(),
+        });
+
+        onLoginSuccess?.();
+        onClose();
+        if (redirectToDashboard) {
+          router.push(getDashboardRoute(dashboardRole));
+        }
+        return;
+      } catch {
+        setAuthMessage(registerResponse.message || 'Account created successfully.');
+        setTab('login');
+        setLoginPhone(signupPhone.trim());
+        setLoginPassword('');
+        setShowPassword(false);
+        setAuthError('Account created, but sign in failed. Please log in with your phone number and password.');
+      }
+    } catch (error) {
+      setAuthError(getApiErrorMessage(error, 'Unable to register your account. Please try again.'));
+    }
   }
 
   return (
@@ -128,28 +285,23 @@ export default function AuthPopup({
             {/* ── LOGIN FORM ── */}
             {tab === 'login' && (
               <form onSubmit={handleLogin} className="space-y-4">
-                {/* Demo hint */}
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500 space-y-1">
-                  {DASHBOARD_CREDENTIALS.map((item) => (
-                    <p key={item.role}>
-                      {item.label}: {item.email} / {item.password}
-                    </p>
-                  ))}
-                </div>
+                {renderRoleSelector()}
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Email Address
+                    Phone Number
                   </label>
                   <input
-                    type="email"
-                    value={loginEmail}
+                    type="tel"
+                    value={loginPhone}
                     onChange={(e) => {
-                      setLoginEmail(e.target.value);
-                      setLoginError('');
+                      setLoginPhone(e.target.value);
+                      setAuthError('');
+                      setAuthMessage('');
                     }}
                     className={inputCls}
-                    placeholder="you@example.com"
+                    placeholder="+91 98765 43210"
+                    autoComplete="tel"
                     required
                   />
                 </div>
@@ -164,10 +316,12 @@ export default function AuthPopup({
                       value={loginPassword}
                       onChange={(e) => {
                         setLoginPassword(e.target.value);
-                        setLoginError('');
+                        setAuthError('');
+                        setAuthMessage('');
                       }}
                       className={`${inputCls} pr-10`}
                       placeholder="••••••••"
+                      autoComplete="current-password"
                       required
                     />
                     <button
@@ -180,20 +334,14 @@ export default function AuthPopup({
                   </div>
                 </div>
 
-                {loginError && (
-                  <p className="text-xs font-medium text-red-600">{loginError}</p>
+                {authError && (
+                  <p className="text-xs font-medium text-red-600">{authError}</p>
+                )}
+                {authMessage && (
+                  <p className="text-xs font-medium text-emerald-600">{authMessage}</p>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-[#1a6db5] accent-[#1a6db5]"
-                    />
-                    <span className="text-sm text-gray-600">Remember me</span>
-                  </label>
+                <div className="flex items-center justify-end">
                   <button type="button" className="text-sm font-medium text-[#1a6db5] hover:underline">
                     Forgot password?
                   </button>
@@ -201,9 +349,10 @@ export default function AuthPopup({
 
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-[#0f3557] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d2e4a] active:scale-[0.98]"
+                  disabled={loginState.isLoading}
+                  className="w-full rounded-xl bg-[#0f3557] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d2e4a] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Log in
+                  {loginState.isLoading ? 'Signing in...' : 'Log in'}
                 </button>
 
                 <p className="text-center text-sm text-gray-500">
@@ -230,7 +379,11 @@ export default function AuthPopup({
                     <input
                       type="text"
                       value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
+                      onChange={(e) => {
+                        setSignupName(e.target.value);
+                        setAuthError('');
+                        setAuthMessage('');
+                      }}
                       className={inputCls}
                       placeholder="John Doe"
                       required
@@ -243,42 +396,20 @@ export default function AuthPopup({
                     <input
                       type="email"
                       value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
+                      onChange={(e) => {
+                        setSignupEmail(e.target.value);
+                        setAuthError('');
+                        setAuthMessage('');
+                      }}
                       className={inputCls}
                       placeholder="you@example.com"
+                      autoComplete="email"
                       required
                     />
                   </div>
                 </div>
 
-                {/* User Type */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    User Type
-                  </label>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    {(['Seller', 'Buyer', 'Lessee'] as UserType[]).map((type) => (
-                      <label
-                        key={type}
-                        className={`flex flex-1 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
-                          userType === type
-                            ? 'border-[#1a6db5] bg-[#f0f7ff] text-[#1a6db5]'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="userType"
-                          value={type}
-                          checked={userType === type}
-                          onChange={() => setUserType(type)}
-                          className="accent-[#1a6db5]"
-                        />
-                        {type}
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                {renderRoleSelector()}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
@@ -289,9 +420,14 @@ export default function AuthPopup({
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
+                        onChange={(e) => {
+                          setSignupPassword(e.target.value);
+                          setAuthError('');
+                          setAuthMessage('');
+                        }}
                         className={`${inputCls} pr-10`}
                         placeholder="••••••••"
+                        autoComplete="new-password"
                         required
                       />
                       <button
@@ -304,7 +440,6 @@ export default function AuthPopup({
                     </div>
                   </div>
 
-                  {/* ── Phone Number (replaces Confirm Password) ── */}
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
                       Phone Number
@@ -312,10 +447,15 @@ export default function AuthPopup({
                     <input
                       type="tel"
                       value={signupPhone}
-                      onChange={(e) => setSignupPhone(e.target.value)}
+                      onChange={(e) => {
+                        setSignupPhone(e.target.value);
+                        setAuthError('');
+                        setAuthMessage('');
+                      }}
                       className={inputCls}
                       placeholder="+91 98765 43210"
                       pattern="[+]?[0-9\s\-()]{7,15}"
+                      autoComplete="tel"
                       required
                     />
                   </div>
@@ -323,14 +463,18 @@ export default function AuthPopup({
 
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-[#0f3557] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d2e4a] active:scale-[0.98]"
+                  disabled={registerState.isLoading}
+                  className="w-full rounded-xl bg-[#0f3557] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d2e4a] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Create account
+                  {registerState.isLoading ? 'Creating account...' : 'Create account'}
                 </button>
 
-                <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
-                  Demo signup keeps mock mode active. For dashboard access, use login with role credentials.
-                </p>
+                {authError && (
+                  <p className="text-xs font-medium text-red-600">{authError}</p>
+                )}
+                {authMessage && (
+                  <p className="text-xs font-medium text-emerald-600">{authMessage}</p>
+                )}
 
                 <p className="text-center text-sm text-gray-500">
                   Already have an account?{' '}

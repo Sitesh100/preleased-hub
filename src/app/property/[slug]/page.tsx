@@ -1,11 +1,10 @@
-import { notFound } from "next/navigation";
-import PropertyDetailPage from "@/src/components/property/PropertyDetailPage";
+import PropertyDetailApiLoader from "@/src/components/property/PropertyDetailApiLoader";
 import { getPropertyBySlug } from "@/src/data/properties";
 import { PropertySource } from "@/src/types/property";
 
 interface PropertyPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ source?: string | string[] }>;
+  searchParams: Promise<{ source?: string | string[]; id?: string | string[] }>;
 }
 
 function getSourceFromSearchParam(
@@ -27,17 +26,16 @@ export default async function PropertyPage({
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
   const source = getSourceFromSearchParam(resolvedSearchParams.source);
-  const property = getPropertyBySlug(slug, source);
-
-  if (!property) {
-    notFound();
-  }
+  const rawId = resolvedSearchParams.id;
+  const propertyId = Array.isArray(rawId) ? rawId[0] : rawId;
+  const fallbackProperty = getPropertyBySlug(slug, source);
 
   return (
-    <PropertyDetailPage
-      property={property}
-      backHref="/listings"
-      backLabel="Listings"
+    <PropertyDetailApiLoader
+      slug={slug}
+      propertyId={propertyId}
+      source={source}
+      fallbackProperty={fallbackProperty ?? null}
     />
   );
 }

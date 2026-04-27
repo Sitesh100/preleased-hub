@@ -18,7 +18,9 @@ import {
   MessageCircle,
   Send,
 } from "lucide-react";
+import { toast } from "sonner";
 import AuthPopup from "@/src/components/auth/AuthPopup";
+import { useCreateInquiryMutation } from "@/src/redux/features/property/propertyApi";
 import { formatCurrency, formatLocation, Property } from "@/src/types/property";
 
 interface PropertyDetailPageProps {
@@ -71,6 +73,7 @@ export default function PropertyDetailPage({
   backLabel,
 }: PropertyDetailPageProps) {
   const router = useRouter();
+  const [createInquiry, { isLoading: isInquirySubmitting }] = useCreateInquiryMutation();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("preleasehub:isLoggedIn") === "true";
@@ -84,6 +87,7 @@ export default function PropertyDetailPage({
           onClose={() => router.push(backHref)}
           defaultTab="login"
           onLoginSuccess={() => setIsLoggedIn(true)}
+          redirectToDashboard={false}
         />
         <main className="mx-auto max-w-[1240px] px-4 py-16 sm:px-6">
           <p className="text-sm text-slate-500">Login required to view property details.</p>
@@ -94,6 +98,20 @@ export default function PropertyDetailPage({
 
   const location = formatLocation(property);
   const showPrice = shouldShowPrice(property.propertyStatus, property.statusLabel);
+
+  async function handleSendInquiry() {
+    try {
+      const result = await createInquiry({ property: property.id }).unwrap();
+      toast.success(result.message ?? "Inquiry submitted successfully.");
+    } catch (error) {
+      const apiError = error as { data?: { message?: string }; error?: string };
+      toast.error(
+        apiError?.data?.message ??
+          apiError?.error ??
+          "Unable to submit inquiry right now. Please try again."
+      );
+    }
+  }
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 py-6 pb-12 sm:px-6 sm:py-8 sm:pb-16">
@@ -269,14 +287,12 @@ export default function PropertyDetailPage({
                 {/* Send Inquiry Button */}
                 <button
                   type="button"
-                  onClick={() => {
-                    // You can open a modal or navigate to an inquiry form here
-                    alert(`Inquiry sent for: ${property.title}`);
-                  }}
+                  onClick={handleSendInquiry}
+                  disabled={isInquirySubmitting}
                   className="flex items-center justify-center gap-2.5 rounded-2xl border border-blue-600 bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-700 hover:border-blue-700 hover:shadow-md active:scale-[0.98]"
                 >
                   <Send size={17} />
-                  Send Inquiry
+                  {isInquirySubmitting ? "Sending..." : "Send Inquiry"}
                 </button>
               </div>
             </section>

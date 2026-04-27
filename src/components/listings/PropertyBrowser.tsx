@@ -111,7 +111,7 @@ export default function PropertyBrowser({
   }
 
   function openPropertyDetails(property: Property) {
-    router.push(`/property/${property.slug}?source=${source}`);
+    router.push(`/property/${property.slug}?source=${source}&id=${property.id}`);
   }
 
   function handleViewDetails(property: Property) {
@@ -141,7 +141,7 @@ export default function PropertyBrowser({
   }
 
   function handleShare(property: Property) {
-    const detailUrl = `${window.location.origin}/property/${property.slug}?source=${source}`;
+    const detailUrl = `${window.location.origin}/property/${property.slug}?source=${source}&id=${property.id}`;
 
     if (navigator.share) {
       navigator.share({ title: property.title, url: detailUrl });
@@ -195,6 +195,7 @@ export default function PropertyBrowser({
         onClose={() => setAuthOpen(false)}
         defaultTab="login"
         onLoginSuccess={handleLoginSuccess}
+        redirectToDashboard={false}
       />
     </main>
   );
