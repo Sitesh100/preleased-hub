@@ -25,6 +25,21 @@ export interface ICreateInquiryRequest {
   property: string;
 }
 
+export interface IMyInquiryItem {
+  id?: string | number;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export type IGetMyInquiriesResponse =
+  | IMyInquiryItem[]
+  | {
+      status?: boolean;
+      message?: string;
+      data?: IMyInquiryItem[] | null;
+      results?: IMyInquiryItem[] | null;
+      [key: string]: unknown;
+    };
 
 export interface ICreatePropertyResponse {
   status?: boolean;
@@ -36,6 +51,7 @@ export type IViewPropertyResponse = unknown;
 export type IUpdatePropertyResponse = ICreatePropertyResponse;
 export type IDeletePropertyResponse = ICreatePropertyResponse;
 export type ICreateInquiryResponse = ICreatePropertyResponse;
+export type IGetMyInquiriesQueryResponse = IGetMyInquiriesResponse;
 
 
 function appendFormData<T extends object>(body: T) {
@@ -103,6 +119,14 @@ const propertyApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ICreateInquiryResponse) => response,
     }),
+
+    getMyInquiries: builder.query<IGetMyInquiriesQueryResponse, void>({
+      query: () => ({
+        url: "/user/v1/property/inquiry/my_inquiries/",
+        method: "GET",
+      }),
+      transformResponse: (response: IGetMyInquiriesQueryResponse) => response,
+    }),
   }),
 });
 
@@ -112,4 +136,5 @@ export const {
   useUpdatePropertyMutation,
   useDeletePropertyMutation,
   useCreateInquiryMutation,
+  useGetMyInquiriesQuery,
 } = propertyApi;

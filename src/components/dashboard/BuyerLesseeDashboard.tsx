@@ -6,9 +6,13 @@ import { useRouter } from 'next/navigation';
 import { ChevronRight, LayoutGrid, LogOut, Search, FileText } from 'lucide-react';
 import Badge from '@/src/components/dashboard/Badge';
 import {
+  IGetMyInquiriesQueryResponse,
+  IMyInquiryItem,
+  useGetMyInquiriesQuery,
+} from '@/src/redux/features/property/propertyApi';
+import {
   clearDashboardSession,
   DashboardRole,
-  DashboardSession,
   getDashboardSession,
   roleLabel,
 } from '@/src/lib/dashboard-auth';
@@ -32,43 +36,109 @@ const ACTIVE_PROPERTIES = [
   },
 ];
 
-const SUBMITTED_REQUESTS = [
-  {
-    id: 'r-1',
-    title: 'Pre-leased Boutique Resort, North Goa',
-    role: 'investor',
-    budget: '₹7 Cr - ₹9 Cr',
-    purpose: 'invest',
-    status: 'Submitted',
-    contactState: 'Contact hidden',
-  },
-  {
-    id: 'r-2',
-    title: 'Pre-leased Boutique Resort, North Goa',
-    role: 'lease_operator',
-    budget: 'MG + Revenue Share',
-    purpose: 'lease',
-    status: 'Shared',
-    contactState: 'Contact hidden',
-  },
-];
+type InquiryCard = {
+  id: string;
+  title: string;
+  role: string;
+  budget: string;
+  purpose: string;
+  status: string;
+  contactState: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function firstText(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === 'number') {
+      return String(value);
+    }
+  }
+  return null;
+}
+
+function extractInquiries(response: IGetMyInquiriesQueryResponse | undefined): IMyInquiryItem[] {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (!response || typeof response !== 'object') {
+    return [];
+  }
+
+  const data = (response as { data?: unknown }).data;
+  if (Array.isArray(data)) {
+    return data as IMyInquiryItem[];
+  }
+
+  const results = (response as { results?: unknown }).results;
+  if (Array.isArray(results)) {
+    return results as IMyInquiryItem[];
+  }
+
+  return [];
+}
+
+function normalizeInquiries(items: IMyInquiryItem[]): InquiryCard[] {
+  return items.map((item, index) => {
+    const record = asRecord(item) ?? {};
+    const propertyRecord = asRecord(record.property);
+
+    return {
+      id:
+        firstText(record.id, record.inquiry_id, record.uuid, record.slug) ??
+        `${index + 1}`,
+      title:
+        firstText(
+          record.property_title,
+          record.property_name,
+          record.title,
+          propertyRecord?.title,
+          propertyRecord?.property_name,
+          propertyRecord?.name
+        ) ?? `Inquiry #${index + 1}`,
+      role: firstText(record.role, record.lead_type, record.user_role, record.inquiry_type) ?? 'N/A',
+      budget: firstText(record.budget, record.offer_amount, record.expected_price_rent) ?? 'Not specified',
+      purpose: firstText(record.purpose, record.intent, record.category) ?? 'Not specified',
+      status: firstText(record.status, record.inquiry_status, record.state) ?? 'Submitted',
+      contactState:
+        firstText(record.contact_state, record.contact_visibility, record.contactStatus) ??
+        'Contact hidden',
+    };
+  });
+}
+
+function getErrorMessage(error: unknown): string {
+  const errorRecord = asRecord(error);
+  const data = asRecord(errorRecord?.data);
+  return (
+    firstText(data?.message, errorRecord?.error, errorRecord?.status) ??
+    'Unable to load your inquiries right now.'
+  );
+}
 
 export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps) {
   const router = useRouter();
-  const [session, setSession] = useState<DashboardSession | null>(null);
+  const [session, setSession] = useState(() => getDashboardSession());
   const [active, setActive] = useState<BuyerNav>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { data, isLoading, isError, error } = useGetMyInquiriesQuery();
+  const submittedRequests = useMemo(() => normalizeInquiries(extractInquiries(data)), [data]);
 
   useEffect(() => {
-    const found = getDashboardSession();
-
-    if (!found || found.role !== role) {
+    if (!session || session.role !== role) {
       router.replace('/dashboard');
-      return;
     }
-
-    setSession(found);
-  }, [role, router]);
+  }, [role, router, session]);
 
   const roleTitle = roleLabel(role);
   const roleSpecificText = useMemo(() => {
@@ -235,25 +305,39 @@ export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps
               </p>
 
               <div className="mt-4 space-y-3">
-                {SUBMITTED_REQUESTS.map((request) => (
-                  <article key={request.id} className="rounded-2xl border border-black/10 bg-white p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h3 className="text-xl font-black leading-tight text-black">{request.title}</h3>
-                        <p className="mt-1 text-sm text-[#5b6b84]">
-                          Role: {request.role} • Budget: {request.budget} • Purpose: {request.purpose}
-                        </p>
-                        <p className="mt-1 text-sm text-[#5b6b84]">Admin-controlled progress for this request.</p>
+                {isLoading ? (
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-[#fafafa] p-6 text-center text-sm text-gray-400">
+                    Loading submitted requests...
+                  </div>
+                ) : isError ? (
+                  <div className="rounded-2xl border border-dashed border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
+                    {getErrorMessage(error)}
+                  </div>
+                ) : submittedRequests.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-[#fafafa] p-6 text-center text-sm text-gray-400">
+                    No inquiry requests found.
+                  </div>
+                ) : (
+                  submittedRequests.map((request) => (
+                    <article key={request.id} className="rounded-2xl border border-black/10 bg-white p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h3 className="text-xl font-black leading-tight text-black">{request.title}</h3>
+                          <p className="mt-1 text-sm text-[#5b6b84]">
+                            Role: {request.role} • Budget: {request.budget} • Purpose: {request.purpose}
+                          </p>
+                          <p className="mt-1 text-sm text-[#5b6b84]">Admin-controlled progress for this request.</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge status={request.status} />
+                          <span className="inline-flex rounded-full border border-black/10 px-3 py-1 text-xs text-gray-500">
+                            {request.contactState}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge status={request.status} />
-                        <span className="inline-flex rounded-full border border-black/10 px-3 py-1 text-xs text-gray-500">
-                          {request.contactState}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  ))
+                )}
               </div>
             </section>
           )}
