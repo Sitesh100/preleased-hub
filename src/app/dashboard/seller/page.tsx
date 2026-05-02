@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
 
 import Sidebar, { NavItem } from '@/src/components/dashboard/Sidebar';
 import Topbar               from '@/src/components/dashboard/Topbar';
@@ -12,9 +13,12 @@ import {
   DashboardSession,
   getDashboardSession,
 } from '@/src/lib/dashboard-auth';
+import { setLogOut } from '@/src/redux/features/auth/authSlice';
+import type { AppDispatch } from '@/src/redux/store';
 
 export default function SellerDashboardPage() {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const [session,     setSession]     = useState<DashboardSession | null>(null);
   const [active,      setActive]      = useState<NavItem>('properties');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -38,8 +42,13 @@ export default function SellerDashboardPage() {
         active={active}
         onNav={setActive}
         onLogout={() => {
+          dispatch(setLogOut());
           clearDashboardSession();
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('preleasehub:isLoggedIn');
+          }
           setSession(null);
+          router.replace('/');
         }}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen((p) => !p)}

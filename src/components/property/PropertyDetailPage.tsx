@@ -51,20 +51,8 @@ function DetailMetric({
   );
 }
 
-// Helper function to determine if price should be shown
-function shouldShowPrice(propertyStatus: string, statusLabel?: string): boolean {
-  // Check against propertyStatus
-  const hidePriceForStatuses = ["Lease-Ready", "Pre-Leased"];
-  if (hidePriceForStatuses.includes(propertyStatus)) {
-    return false;
-  }
-  
-  // Also check statusLabel as a fallback
-  if (statusLabel === "Operational Asset" || statusLabel === "Managed Inventory") {
-    return false;
-  }
-  
-  return true;
+function isPreLeased(listingType: number): boolean {
+  return listingType === 3;
 }
 
 export default function PropertyDetailPage({
@@ -97,7 +85,7 @@ export default function PropertyDetailPage({
   }
 
   const location = formatLocation(property);
-  const showPrice = shouldShowPrice(property.propertyStatus, property.statusLabel);
+  const preLeased = isPreLeased(property.listingType);
 
   async function handleSendInquiry() {
     try {
@@ -125,14 +113,20 @@ export default function PropertyDetailPage({
 
       <section className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_25px_80px_-45px_rgba(15,23,42,0.4)] sm:rounded-[32px]">
         <div className="relative min-h-[320px] overflow-hidden bg-slate-100 sm:min-h-[420px]">
-          <Image
-            src={property.imageUrl}
-            alt={property.title}
-            fill
-            priority
-            sizes="(max-width: 1280px) 100vw, 1240px"
-            className="object-cover"
-          />
+          {property.imageUrl ? (
+            <Image
+              src={property.imageUrl}
+              alt={property.title}
+              fill
+              priority
+              sizes="(max-width: 1280px) 100vw, 1240px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-slate-200 text-sm font-medium text-slate-500">
+              No image available
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent" />
 
           <div className="absolute inset-x-0 bottom-0 p-4 sm:p-8">
@@ -174,24 +168,25 @@ export default function PropertyDetailPage({
             value={`${property.areaInSqFt.toLocaleString()} sq ft`}
             icon={<Maximize2 size={18} />}
           />
-          {/* Conditionally show Property Price */}
-          {showPrice && (
+          <DetailMetric
+            label="Property Price"
+            value={formatCurrency(property.propertyPrice, property.currency)}
+            icon={<CircleDollarSign size={18} />}
+          />
+          {preLeased && (
             <DetailMetric
-              label="Property Price"
-              value={formatCurrency(property.propertyPrice, property.currency)}
-              icon={<CircleDollarSign size={18} />}
+              label="Monthly Rental"
+              value={formatCurrency(property.monthlyRent, property.currency)}
+              icon={<Percent size={18} />}
             />
           )}
-          <DetailMetric
-            label="Monthly Rent"
-            value={formatCurrency(property.monthlyRent, property.currency)}
-            icon={<Percent size={18} />}
-          />
-          <DetailMetric
-            label="Estimated ROI"
-            value={`${property.roi.toFixed(2)}%`}
-            icon={<Sparkles size={18} />}
-          />
+          {preLeased && (
+            <DetailMetric
+              label="Estimated ROI"
+              value={property.roi > 0 ? `${property.roi.toFixed(2)}%` : "N/A"}
+              icon={<Sparkles size={18} />}
+            />
+          )}
           <DetailMetric
             label="Occupancy"
             value={property.occupancyStatus}
@@ -247,18 +242,22 @@ export default function PropertyDetailPage({
                   <span className="text-slate-500">Market</span>
                   <span className="font-semibold text-slate-900">{location}</span>
                 </div>
-                <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4 text-sm">
-                  <span className="text-slate-500">Rental Income</span>
-                  <span className="font-semibold text-blue-700">
-                    {formatCurrency(property.monthlyRent, property.currency)}
-                  </span>
-                </div>
-                <div className="flex items-start justify-between gap-4 text-sm">
-                  <span className="text-slate-500">Expected Yield</span>
-                  <span className="font-semibold text-slate-900">
-                    {property.roi.toFixed(2)}%
-                  </span>
-                </div>
+                {preLeased && (
+                  <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4 text-sm">
+                    <span className="text-slate-500">Monthly Rental</span>
+                    <span className="font-semibold text-blue-700">
+                      {formatCurrency(property.monthlyRent, property.currency)}
+                    </span>
+                  </div>
+                )}
+                {preLeased && (
+                  <div className="flex items-start justify-between gap-4 text-sm">
+                    <span className="text-slate-500">Expected Yield</span>
+                    <span className="font-semibold text-slate-900">
+                      {property.roi > 0 ? `${property.roi.toFixed(2)}%` : "N/A"}
+                    </span>
+                  </div>
+                )}
               </div>
             </section>
 

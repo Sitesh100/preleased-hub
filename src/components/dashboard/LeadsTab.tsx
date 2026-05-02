@@ -1,14 +1,17 @@
 // src/components/dashboard/LeadsTab.tsx
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarCheck2, RefreshCw, Users } from 'lucide-react';
 import StatCard from './StatCard';
 import Badge from './Badge';
 import {
+  IAdminLeadAction,
   IGetMyInquiriesQueryResponse,
   IMyInquiryItem,
   useGetMyInquiriesQuery,
+  useHandleBuyerOperatorLeadMutation,
+  useHandleLesseeOperatorLeadMutation,
 } from '@/src/redux/features/property/propertyApi';
 
 type InquiryCard = {
@@ -135,8 +138,21 @@ function getErrorMessage(error: unknown): string {
   );
 }
 
+function getLeadChannel(leadType: string): 'buyer' | 'lessee' {
+  const normalized = leadType.toLowerCase();
+  if (normalized.includes('lessee') || normalized.includes('operator')) {
+    return 'lessee';
+  }
+  return 'buyer';
+}
+
 export default function LeadsTab() {
-  const { data, isLoading, isError, error } = useGetMyInquiriesQuery();
+  const { data, isLoading, isError, error, refetch } = useGetMyInquiriesQuery();
+  const [handleBuyerLead, { isLoading: isBuyerActionLoading }] = useHandleBuyerOperatorLeadMutation();
+  const [handleLesseeLead, { isLoading: isLesseeActionLoading }] = useHandleLesseeOperatorLeadMutation();
+  const [activeActionId, setActiveActionId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const inquiries = useMemo(() => normalizeInquiries(extractInquiries(data)), [data]);
   const requestCenterItems = useMemo(
@@ -147,6 +163,48 @@ export default function LeadsTab() {
     () => inquiries.filter((item) => item.contactState.toLowerCase() !== 'contact hidden').length,
     [inquiries]
   );
+  const isAnyActionLoading = isBuyerActionLoading || isLesseeActionLoading;
+
+  async function handleLeadAction(lead: InquiryCard, action: IAdminLeadAction) {
+    const leadId = lead.id.trim();
+    if (!leadId) {
+      setActionError('Lead id is missing. Unable to process this action.');
+      return;
+    }
+
+    const payload: { id: string; action: IAdminLeadAction; meet_link?: string } = {
+      id: leadId,
+      action,
+    };
+
+    if (action === 'send_link') {
+      const link = window.prompt('Enter Google Meet link');
+      if (!link || !link.trim()) {
+        setActionError('Google Meet link is required to schedule a meeting.');
+        return;
+      }
+      payload.meet_link = link.trim();
+    }
+
+    setActionError(null);
+    setActionFeedback(null);
+    setActiveActionId(leadId);
+
+    try {
+      if (getLeadChannel(lead.leadType) === 'lessee') {
+        const response = await handleLesseeLead(payload).unwrap();
+        setActionFeedback(response.message ?? 'Lessee lead action completed successfully.');
+      } else {
+        const response = await handleBuyerLead(payload).unwrap();
+        setActionFeedback(response.message ?? 'Buyer lead action completed successfully.');
+      }
+      await refetch();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setActiveActionId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -223,6 +281,16 @@ export default function LeadsTab() {
         </div>
 
         <div className="mt-5 space-y-3">
+          {actionFeedback ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+              {actionFeedback}
+            </div>
+          ) : null}
+          {actionError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+              {actionError}
+            </div>
+          ) : null}
           {isLoading ? (
             <div className="rounded-2xl border border-dashed border-black/10 bg-[#fafafa] p-6 text-center text-sm text-gray-400">
               Loading lead inquiries...
@@ -261,11 +329,26 @@ export default function LeadsTab() {
                 </div>
 
                 <div className="flex items-center gap-2 md:pt-1">
-                  <button className="h-10 rounded-xl bg-black px-4 text-xs font-bold text-white transition hover:bg-gray-800">
-                    Request Connect
+                  <button
+                    disabled={isAnyActionLoading}
+                    onClick={() => handleLeadAction(lead, 'approve')}
+                    className="h-10 rounded-xl bg-black px-4 text-xs font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isAnyActionLoading && activeActionId === lead.id ? 'Processing...' : 'Approve'}
                   </button>
-                  <button className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50">
-                    Request Meeting
+                  <button
+                    disabled={isAnyActionLoading}
+                    onClick={() => handleLeadAction(lead, 'disapprove')}
+                    className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Disapprove
+                  </button>
+                  <button
+                    disabled={isAnyActionLoading}
+                    onClick={() => handleLeadAction(lead, 'send_link')}
+                    className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Send Meet Link
                   </button>
                 </div>
               </div>

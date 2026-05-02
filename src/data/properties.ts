@@ -18,6 +18,7 @@ export const listingProperties: Property[] = [
       "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1400&q=80",
     propertyStatus: "Pre-Leased",
     statusLabel: "Operational Asset",
+    listingType: 3,
     description:
       "A stabilized hospitality asset in a growing commercial corridor, positioned for buyers looking for a ready-to-operate property with immediate revenue visibility and straightforward backend integration later.",
     highlights: [
@@ -48,6 +49,7 @@ export const listingProperties: Property[] = [
       "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1400&q=80",
     propertyStatus: "Lease-Ready",
     statusLabel: "Managed Inventory",
+    listingType: 2,
     description:
       "A professionally managed service apartment block designed for urban long-stay demand, with a clean investment profile and enough detail fields to model real API responses later.",
     highlights: [
@@ -78,6 +80,7 @@ export const listingProperties: Property[] = [
       "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1400&q=80",
     propertyStatus: "Sale",
     statusLabel: "Income Generating",
+    listingType: 1,
     description:
       "A centrally located hotel asset suited to users who need a polished listing experience today and an extensible property data structure for tomorrow's backend integration.",
     highlights: [

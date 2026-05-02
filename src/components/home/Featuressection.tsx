@@ -13,7 +13,10 @@ import {
   ShieldCheck,
   KeyRound,
   BadgeCheck,
-  Zap
+  Zap,
+  Home,
+  DollarSign,
+  Building2,
 } from "lucide-react";
 
 import featuredImage from "@/src/assets/images/best_deals.png";
@@ -35,6 +38,12 @@ const cardVariants: Variants = {
     transition: { duration: 0.6, ease: EASE, delay: i * 0.1 },
   }),
 };
+
+const stats = [
+  { num: "200+", label: "Assets Listed" },
+  { num: "₹50Cr", label: "Deal Volume" },
+  { num: "98%", label: "Rent Secured" },
+];
 
 /* ─── data ─────────────────────────────────────────────── */
 const AUDIENCE = [
@@ -63,6 +72,22 @@ const AUDIENCE = [
     text: "Built to reduce friction, improve trust, and deliver a premium, professional experience across every stage of hospitality deal discovery.",
     icon: BadgeCheck,
   },
+];
+
+const features = [
+  "Security deposit clarity",
+  "Lock-in & escalation",
+  "Payment mechanism",
+  "Reserve logic",
+  "Replacement support",
+  "Renewal alerts",
+];
+ 
+const trustItems = [
+  "RERA Verified assets across India",
+  "Structured deal rooms with escrow",
+  "End-to-end post-closure monitoring",
+  "Dedicated relationship managers",
 ];
 
 const FEATURED = [
@@ -104,6 +129,24 @@ const FAQ = [
   {
     q: "Why does the platform ask for role-based login?",
     a: "Because sellers, investors, and operators each receive a distinct workflow, dashboard, and deal experience after login.",
+  },
+];
+
+const journeys = [
+  {
+    icon: Home,
+    title: "Owners / Sellers",
+    text: "Submit raw assets, complete verification, enter structuring queue, and track lead quality in real time.",
+  },
+  {
+    icon: DollarSign,
+    title: "Investors / Buyers",
+    text: "Access structured deal rooms with lock-in, deposit, yield, operator profile, and risk summary.",
+  },
+  {
+    icon: Building2,
+    title: "Operators / Lessees",
+    text: "Explore lease-ready inventory, submit interest, schedule site visits, and negotiate terms seamlessly.",
   },
 ];
 
@@ -358,109 +401,169 @@ export default function FeaturesSection() {
 
       {/* ─── PLATFORM PATHS (Owners · Investors · Operators) ── */}
       <section
-        ref={whyRef}
-        className="noise-overlay relative overflow-hidden bg-[linear-gradient(135deg,#0f1724_0%,#224a7d_52%,#4b86ca_100%)] py-16 text-white sm:py-20 lg:py-24"
-      >
-        <div className="pointer-events-none absolute -left-32 top-0 h-80 w-80 rounded-full bg-white/8 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-[var(--brand-blue-500)]/35 blur-3xl" />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">
-          <div className="grid gap-16 lg:grid-cols-2 lg:items-start">
-
-            {/* left: three distinct journeys */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={whyIn ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.7 }}
-            >
-              <SectionLabel invert>Built for owners, investors, and operators</SectionLabel>
-              <h2 className="font-display text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
-                Three distinct journeys.<br />
-                <span className="italic text-white/88">One unified platform.</span>
-              </h2>
-              <p className="mt-5 text-base text-white/65">
-                PreleaseHub serves sellers who need asset packaging, investors who need rent visibility and yield clarity, and operators who need expansion-ready inventory.
-              </p>
-
-              <div className="mt-8 space-y-3">
-                {[
-                  {
-                    title: "Owners / Sellers",
-                    text: "Submit raw assets, complete verification, enter structuring queue, and track lead quality.",
-                  },
-                  {
-                    title: "Investors / Buyers",
-                    text: "Access structured deal rooms with lock-in, deposit, yield, operator profile, and risk summary.",
-                  },
-                  {
-                    title: "Operators / Lessees",
-                    text: "Explore lease-ready inventory, submit interest, schedule site visits, and negotiate terms.",
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur"
-                  >
-                    <p className="font-semibold text-white">{item.title}</p>
-                    <p className="mt-1.5 text-sm text-white/60">{item.text}</p>
+      ref={whyRef}
+      className="relative overflow-hidden py-20 text-white sm:py-24 lg:py-28"
+      style={{
+        background: "linear-gradient(135deg,#0f1724 0%,#1a3a6b 45%,#2d5fa8 75%,#4b86ca 100%)",
+      }}
+    >
+      {/* Ambient blobs */}
+      <div className="pointer-events-none absolute -left-40 -top-32 h-[500px] w-[500px] rounded-full bg-white/5 blur-[90px]" />
+      <div className="pointer-events-none absolute -bottom-48 -right-36 h-[600px] w-[600px] rounded-full bg-[#4b86ca]/25 blur-[90px]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2d5fa8]/25 blur-[80px]" />
+ 
+      {/* Grid texture */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+ 
+      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-12">
+ 
+        {/* ── MAIN GRID ── */}
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-16">
+ 
+          {/* LEFT */}
+          <motion.div
+            initial={{ opacity: 0, x: -28 }}
+            animate={whyIn ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.65 }}
+          >
+            <SectionLabel invert>Built for owners, investors, and operators</SectionLabel>
+ 
+            <h2 className="font-serif text-4xl font-normal leading-[1.1] text-white sm:text-5xl md:text-[52px]">
+              Three distinct journeys.<br />
+              <span className="italic text-white/70">One unified platform.</span>
+            </h2>
+ 
+            <p className="mt-5 max-w-[440px] text-sm leading-[1.75] text-white/55">
+              PreleaseHub serves sellers who need asset packaging, investors who need
+              rent visibility and yield clarity, and operators who need expansion-ready inventory.
+            </p>
+ 
+            {/* Journey cards */}
+            <div className="mt-8 space-y-3">
+              {journeys.map(({ icon: Icon, title, text }) => (
+                <div
+                  key={title}
+                  className="flex items-start gap-4 rounded-2xl border border-white/12 bg-white/7 p-5 backdrop-blur transition-colors hover:border-white/20 hover:bg-white/10"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10">
+                    <Icon className="h-4 w-4 text-white/75" />
                   </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* right: rent security + asset monitoring */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={whyIn ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.7, delay: 0.15 }}
-              className="space-y-6"
-            >
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur">
-                <div className="flex items-center gap-2 text-white/90">
-                  <ShieldCheck className="h-5 w-5" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">Rent security structure</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{title}</p>
+                    <p className="mt-1 text-[13px] leading-[1.55] text-white/52">{text}</p>
+                  </div>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">
-                  Every premium deal clearly shows the security deposit, lock-in period, escalation, payment mechanism, reserve logic, and replacement support.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur">
-                <div className="flex items-center gap-2 text-white/90">
-                  <Zap className="h-5 w-5" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">Asset monitoring layer</span>
+              ))}
+            </div>
+          </motion.div>
+ 
+          {/* RIGHT */}
+          <motion.div
+            initial={{ opacity: 0, x: 28 }}
+            animate={whyIn ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.65, delay: 0.15 }}
+            className="space-y-4"
+          >
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-3">
+              {stats.map(({ num, label }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/12 bg-white/7 px-4 py-5 text-center backdrop-blur"
+                >
+                  <p className="font-serif text-3xl font-normal text-white">{num}</p>
+                  <p className="mt-1 text-[11px] tracking-wide text-white/45">{label}</p>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">
-                  After closure, the platform extends value through rent tracking, renewal alerts, operator support, and resale assistance.
-                </p>
+              ))}
+            </div>
+ 
+            {/* Rent security */}
+            <div className="rounded-2xl border border-white/12 bg-white/7 p-6 backdrop-blur">
+              <div className="mb-3 flex items-center gap-2.5">
+                <ShieldCheck className="h-[18px] w-[18px] text-white/70" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/62">
+                  Rent Security Structure
+                </span>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  "Security deposit clarity",
-                  "Lock-in & escalation",
-                  "Payment mechanism",
-                  "Reserve logic",
-                  "Replacement support",
-                  "Renewal alerts",
-                ].map((point, i) => (
-                  <motion.div
-                    key={point}
-                    variants={cardVariants}
-                    initial="hidden"
-                    animate={whyIn ? "visible" : "hidden"}
-                    custom={i}
-                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70 backdrop-blur"
-                  >
-                    <ShieldCheck className="h-3 w-3 shrink-0 text-white/50" />
-                    {point}
-                  </motion.div>
-                ))}
+              <p className="text-[13.5px] leading-[1.7] text-white/57">
+                Every premium deal clearly shows the security deposit, lock-in period, escalation,
+                payment mechanism, reserve logic, and replacement support — all in one deal room.
+              </p>
+            </div>
+ 
+            {/* Asset monitoring */}
+            <div className="rounded-2xl border border-white/12 bg-white/7 p-6 backdrop-blur">
+              <div className="mb-3 flex items-center gap-2.5">
+                <Zap className="h-[18px] w-[18px] text-white/70" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/62">
+                  Asset Monitoring Layer
+                </span>
               </div>
-            </motion.div>
-          </div>
+              <p className="text-[13.5px] leading-[1.7] text-white/57">
+                After closure, the platform extends value through rent tracking, renewal alerts,
+                operator support, and resale assistance — keeping your investment active.
+              </p>
+            </div>
+ 
+            {/* Feature chips */}
+            <div className="grid grid-cols-3 gap-2">
+              {features.map((point, i) => (
+                <motion.div
+                  key={point}
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate={whyIn ? "visible" : "hidden"}
+                  custom={i}
+                  className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11.5px] text-white/58 backdrop-blur transition-colors hover:bg-white/9"
+                >
+                  <ShieldCheck className="h-3 w-3 shrink-0 text-white/35" />
+                  {point}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
-      </section>
+ 
+        {/* ── DIVIDER ── */}
+        <div
+          className="my-14"
+          style={{
+            height: "1px",
+            background:
+              "linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 30%,rgba(255,255,255,0.12) 70%,transparent)",
+          }}
+        />
+ 
+        {/* ── TRUST BAR ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={whyIn ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.55, delay: 0.5 }}
+          className="flex flex-wrap items-center justify-between gap-6"
+        >
+          {trustItems.map((item, i) => (
+            <div key={i} className="flex items-center gap-2.5 text-[13px] text-white/48">
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{
+                  background: "rgba(75,134,202,0.9)",
+                  boxShadow: "0 0 8px rgba(75,134,202,0.7)",
+                }}
+              />
+              {item}
+            </div>
+          ))}
+        </motion.div>
+ 
+      </div>
+    </section>
 
       {/* ─── TRUST + FAQ ───────────────────────────────────── */}
       <section ref={trustRef} className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-12 lg:py-20">

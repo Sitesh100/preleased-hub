@@ -15,10 +15,11 @@ interface PropertyCardProps {
 }
 
 // Helper function to determine if price should be shown
-function shouldShowPrice(propertyStatus: string): boolean {
-  // Hide price for these statuses
-  const hidePriceForStatuses = ["Lease-Ready", "Pre-Leased", "Operational Asset"];
-  return !hidePriceForStatuses.includes(propertyStatus);
+function isPreLeased(listingType: number): boolean {
+  return listingType === 3;
+}
+function isLeaseReady(listingType: number): boolean {
+  return listingType === 2;
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -27,9 +28,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   onContact,
   onShare,
 }) => {
-  const { id, title, city, propertyType, areaInSqFt, propertyPrice, monthlyRent, roi, imageUrl, currency, propertyStatus, statusLabel } = property;
-  
-  const showPrice = shouldShowPrice(propertyStatus);
+  const { id, title, city, propertyType, areaInSqFt, propertyPrice, monthlyRent, roi, imageUrl, currency, propertyStatus, listingType, statusLabel } = property;
+  const preLeased = isPreLeased(listingType);
+  const leaseReady = isLeaseReady(listingType);
+  const sale = !preLeased && !leaseReady;
   const displayStatus = statusLabel || propertyStatus;
 
   return (
@@ -51,13 +53,19 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         >
           <Share2 size={15} />
         </button>
-        <Image
-          src={imageUrl}
-          alt={title}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-xs font-medium text-slate-500">
+            No image available
+          </div>
+        )}
       </div>
 
       {/* ── Body ── */}
@@ -82,25 +90,33 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* ── Pricing table ── */}
         <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2.5 flex flex-col gap-1.5 mt-1">
-          {/* Conditionally show Property Price */}
-          {showPrice && (
+          {sale && (
             <div className="flex justify-between items-center text-sm">
               <span className="text-slate-500">Property Price</span>
               <span className="font-semibold text-blue-700">{formatCurrency(propertyPrice, currency)}</span>
             </div>
           )}
-          
-          {/* Always show Monthly Rent */}
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500">Monthly Rent</span>
-            <span className="font-semibold text-blue-700">{formatCurrency(monthlyRent, currency)}</span>
-          </div>
-          
-          {/* Always show ROI */}
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500">ROI</span>
-            <span className="font-bold text-slate-800">{roi.toFixed(2)}%</span>
-          </div>
+
+          {leaseReady && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500">Monthly Rent</span>
+              <span className="font-semibold text-blue-700">{formatCurrency(monthlyRent, currency)}</span>
+            </div>
+          )}
+
+          {preLeased && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500">Monthly Rental</span>
+              <span className="font-semibold text-blue-700">{formatCurrency(monthlyRent, currency)}</span>
+            </div>
+          )}
+
+          {preLeased && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500">ROI</span>
+              <span className="font-bold text-slate-800">{roi > 0 ? `${roi.toFixed(2)}%` : "N/A"}</span>
+            </div>
+          )}
         </div>
 
         {/* ── Actions ── */}

@@ -1,8 +1,9 @@
 export type PropertyType =
   | "Hotel"
-  | "Service Apartment"
   | "Resort"
   | "Villa"
+  | "Service Apartment"
+  | "Holiday Home"
   | "Commercial";
 
 export type PropertySource = "listings";
@@ -25,6 +26,7 @@ export interface Property {
   currency?: string;
   propertyStatus: PropertyStatus;
   statusLabel: string;
+  listingType: number;
   description: string;
   highlights: string[];
   amenities: string[];

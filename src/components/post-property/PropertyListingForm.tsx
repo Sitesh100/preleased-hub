@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronDown, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Upload, X, FileText } from "lucide-react";
 import AuthPopup from "@/src/components/auth/AuthPopup";
 import {
   useCreatePropertyMutation,
@@ -17,11 +17,22 @@ export interface PropertyFormInitialValues {
   email_address?: string;
   property_name?: string;
   city?: string;
+  location?: string;
+  location_area?: string;
   full_address?: string;
+  selling_price?: string | number;
+  expected_monthly_rent?: string | number;
+  rooms?: string | number;
+  listing_type?: string | number;
   expected_price_rent?: string | number;
   rooms_keys?: string | number;
+  built_up_area?: string | number;
   current_occupancy_percent?: string | number;
   current_monthly_income?: string | number;
+  security_deposit?: string | number;
+  annual_rental_income?: string | number;
+  lock_in_period?: string | number;
+  property_description?: string;
   intent?: string | number;
   property_type?: string | number;
 }
@@ -34,16 +45,6 @@ interface PropertyListingFormProps {
   onCancel?: () => void;
 }
 
-const inputClass =
-  "h-12 w-full rounded-[14px] border border-[#ced7e3] bg-[#f4f6f8] px-4 text-[17px] text-[#5c6f88] outline-none transition placeholder:text-[#5c6f88] focus:border-[#9fb1ca]";
-
-const selectTriggerClass =
-  "flex h-12 w-full items-center justify-between rounded-[14px] border border-[#ced7e3] bg-[#f4f6f8] px-4 text-[17px] text-[#223049]";
-
-const selectMenuClass =
-  "absolute left-0 right-0 top-[56px] z-20 rounded-[12px] border border-[#d3dce7] bg-[#f4f6f8] py-1 shadow-[0_8px_24px_rgba(21,30,58,0.12)]";
-
-// Label → numeric value mappings expected by the API
 const PROPERTY_TYPE_OPTIONS: { label: string; value: number }[] = [
   { label: "Hotel", value: 1 },
   { label: "Resort", value: 2 },
@@ -52,42 +53,66 @@ const PROPERTY_TYPE_OPTIONS: { label: string; value: number }[] = [
   { label: "Holiday Home", value: 5 },
 ];
 
-const INTENT_OPTIONS: { label: string; value: number }[] = [
-  { label: "Sell", value: 1 },
-  { label: "Lease", value: 2 },
-  { label: "Both", value: 3 },
-];
+const LISTING_TYPES = [
+  { key: "sell", label: "Sell", desc: "Outright property sale", value: 1 },
+  { key: "lease", label: "Lease", desc: "Monthly rental income", value: 2 },
+  { key: "preleased", label: "Pre-Leased Sale", desc: "Income generating asset", value: 3 },
+] as const;
 
+type ListingKey = (typeof LISTING_TYPES)[number]["key"];
+
+// h-11 = 44px, text-[15px] — comfortable readable size
+const inputClass =
+  "h-11 w-full rounded-[10px] border border-[#d1d5db] bg-white px-4 text-[15px] text-[#1f2937] outline-none placeholder:text-[#9ca3af] focus:border-[#4f46e5] transition-colors";
+
+// ─── SelectBox ────────────────────────────────────────────────────────────────
 function SelectBox({
   label,
   placeholder,
   options,
-  open,
-  onToggle,
   onSelect,
 }: {
   label: string;
   placeholder: string;
   options: { label: string; value: number }[];
-  open: boolean;
-  onToggle: () => void;
   onSelect: (label: string, value: number) => void;
 }) {
-  return (
-    <div className="relative">
-      <button type="button" className={selectTriggerClass} onClick={onToggle}>
-        <span className={label ? "text-[#223049]" : "text-[#5c6f88]"}>{label || placeholder}</span>
-        <ChevronDown className="h-5 w-5 text-[#7c8ea4]" />
-      </button>
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(label);
+  const ref = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { setSelected(label); }, [label]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`flex h-11 w-full items-center justify-between rounded-[10px] border px-4 text-[15px] transition-colors ${
+          open ? "border-[#4f46e5]" : "border-[#d1d5db]"
+        } bg-white ${selected ? "text-[#1f2937]" : "text-[#9ca3af]"}`}
+      >
+        <span className="truncate">{selected || placeholder}</span>
+        <ChevronDown
+          className={`ml-2 h-4 w-4 flex-shrink-0 text-[#9ca3af] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
       {open && (
-        <div className={selectMenuClass}>
+        <div className="absolute left-0 right-0 top-[46px] z-30 overflow-hidden rounded-[10px] border border-[#e5e7eb] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
           {options.map((item) => (
             <button
               key={item.value}
               type="button"
-              onClick={() => onSelect(item.label, item.value)}
-              className="block w-full px-8 py-2 text-left text-[17px] text-[#2b3a51] transition hover:bg-[#e8edf3]"
+              onClick={() => { setSelected(item.label); onSelect(item.label, item.value); setOpen(false); }}
+              className="block w-full px-4 py-2.5 text-left text-[15px] text-[#374151] transition-colors hover:bg-[#f3f4f6]"
             >
               {item.label}
             </button>
@@ -98,6 +123,19 @@ function SelectBox({
   );
 }
 
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]">
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
+}
+
+// ─── Main form ────────────────────────────────────────────────────────────────
 export default function PropertyListingForm({
   submitLabel = "Submit Listing",
   className,
@@ -108,145 +146,152 @@ export default function PropertyListingForm({
   const [createProperty, { isLoading: isCreating }] = useCreatePropertyMutation();
   const [updateProperty, { isLoading: isUpdating }] = useUpdatePropertyMutation();
 
-  // Text fields
-  const [ownerCompanyName, setOwnerCompanyName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [emailAddress, setEmailAddress] = useState("");
   const [propertyName, setPropertyName] = useState("");
   const [city, setCity] = useState("");
-  const [fullAddress, setFullAddress] = useState("");
-  const [expectedPriceRent, setExpectedPriceRent] = useState("");
-  const [roomsKeys, setRoomsKeys] = useState("");
-  const [currentOccupancyPercent, setCurrentOccupancyPercent] = useState("");
-  const [currentMonthlyIncome, setCurrentMonthlyIncome] = useState("");
-
-  // Select fields — store both display label and numeric value
+  const [locationArea, setLocationArea] = useState("");
   const [propertyTypeLabel, setPropertyTypeLabel] = useState("");
   const [propertyTypeValue, setPropertyTypeValue] = useState<number | null>(null);
-  const [intentLabel, setIntentLabel] = useState("");
-  const [intentValue, setIntentValue] = useState<number | null>(null);
-  const [showTypeMenu, setShowTypeMenu] = useState(false);
-  const [showIntentMenu, setShowIntentMenu] = useState(false);
+  const [totalRooms, setTotalRooms] = useState("");
+  const [builtUpArea, setBuiltUpArea] = useState("");
 
-  // File upload
+  const [listingKey, setListingKey] = useState<ListingKey>("sell");
+  const [sellingPrice, setSellingPrice] = useState("");
+  const [expectedMonthlyRent, setExpectedMonthlyRent] = useState("");
+  const [securityDeposit, setSecurityDeposit] = useState("");
+  const [annualRentalIncome, setAnnualRentalIncome] = useState("");
+  const [lockInPeriod, setLockInPeriod] = useState("");
+
+  const [ownerName, setOwnerName] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [description, setDescription] = useState("");
+
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<{ file: File; url: string }[]>([]);
 
-  // Auth
   const [authOpen, setAuthOpen] = useState(false);
-
-  // Error / success
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const isEditMode = Boolean(initialValues?.id);
   const isLoading = isCreating || isUpdating;
 
-  const intentLabelFromValue = (value: string | number | undefined) => {
-    const matched = INTENT_OPTIONS.find((option) => String(option.value) === String(value));
-    return matched?.label ?? "";
+  const intentValueFromKey = (key: ListingKey) =>
+    LISTING_TYPES.find((t) => t.key === key)?.value ?? 1;
+
+  const listingKeyFromValue = (value: string | number | undefined): ListingKey => {
+    const matched = LISTING_TYPES.find((t) => String(t.value) === String(value));
+    return (matched?.key ?? "sell") as ListingKey;
   };
 
-  const propertyTypeLabelFromValue = (value: string | number | undefined) => {
-    const matched = PROPERTY_TYPE_OPTIONS.find((option) => String(option.value) === String(value));
-    return matched?.label ?? "";
-  };
+  const propertyTypeLabelFromValue = (value: string | number | undefined) =>
+    PROPERTY_TYPE_OPTIONS.find((o) => String(o.value) === String(value))?.label ?? "";
 
   useEffect(() => {
     if (!initialValues) {
-      setOwnerCompanyName("");
-      setPhoneNumber("");
-      setEmailAddress("");
-      setPropertyName("");
-      setCity("");
-      setFullAddress("");
-      setExpectedPriceRent("");
-      setRoomsKeys("");
-      setCurrentOccupancyPercent("");
-      setCurrentMonthlyIncome("");
-      setPropertyTypeLabel("");
-      setPropertyTypeValue(null);
-      setIntentLabel("");
-      setIntentValue(null);
-      setUploadedFiles([]);
-      setError(null);
-      setSuccessMessage(null);
+      setPropertyName(""); setCity(""); setLocationArea("");
+      setPropertyTypeLabel(""); setPropertyTypeValue(null);
+      setTotalRooms(""); setBuiltUpArea("");
+      setListingKey("sell"); setSellingPrice("");
+      setExpectedMonthlyRent(""); setSecurityDeposit("");
+      setAnnualRentalIncome(""); setLockInPeriod("");
+      setOwnerName(""); setContactNumber(""); setEmailAddress("");
+      setDescription(""); setUploadedFiles([]); setPreviewUrls([]);
+      setError(null); setSuccessMessage(null);
       return;
     }
-
-    setOwnerCompanyName(initialValues.owner_company_name ?? "");
-    setPhoneNumber(initialValues.phone_number ?? "");
-    setEmailAddress(initialValues.email_address ?? "");
     setPropertyName(initialValues.property_name ?? "");
     setCity(initialValues.city ?? "");
-    setFullAddress(initialValues.full_address ?? "");
-    setExpectedPriceRent(
-      initialValues.expected_price_rent !== undefined ? String(initialValues.expected_price_rent) : ""
-    );
-    setRoomsKeys(initialValues.rooms_keys !== undefined ? String(initialValues.rooms_keys) : "");
-    setCurrentOccupancyPercent(
-      initialValues.current_occupancy_percent !== undefined
-        ? String(initialValues.current_occupancy_percent)
-        : ""
-    );
-    setCurrentMonthlyIncome(
-      initialValues.current_monthly_income !== undefined
-        ? String(initialValues.current_monthly_income)
-        : ""
-    );
-    setPropertyTypeValue(
-      initialValues.property_type !== undefined ? Number(initialValues.property_type) : null
-    );
+    setLocationArea(initialValues.location ?? initialValues.location_area ?? initialValues.full_address ?? "");
     setPropertyTypeLabel(propertyTypeLabelFromValue(initialValues.property_type));
-    setIntentValue(initialValues.intent !== undefined ? Number(initialValues.intent) : null);
-    setIntentLabel(intentLabelFromValue(initialValues.intent));
-    setUploadedFiles([]);
-    setError(null);
-    setSuccessMessage(null);
+    setPropertyTypeValue(initialValues.property_type !== undefined ? Number(initialValues.property_type) : null);
+    setTotalRooms(
+      initialValues.rooms !== undefined
+        ? String(initialValues.rooms)
+        : initialValues.rooms_keys !== undefined
+          ? String(initialValues.rooms_keys)
+          : ""
+    );
+    setBuiltUpArea(initialValues.built_up_area !== undefined ? String(initialValues.built_up_area) : "");
+    setListingKey(listingKeyFromValue(initialValues.listing_type ?? initialValues.intent));
+    setSellingPrice(
+      initialValues.selling_price !== undefined
+        ? String(initialValues.selling_price)
+        : initialValues.expected_price_rent !== undefined
+          ? String(initialValues.expected_price_rent)
+          : ""
+    );
+    setExpectedMonthlyRent(
+      initialValues.expected_monthly_rent !== undefined
+        ? String(initialValues.expected_monthly_rent)
+        : initialValues.current_monthly_income !== undefined
+          ? String(initialValues.current_monthly_income)
+          : ""
+    );
+    setSecurityDeposit(initialValues.security_deposit !== undefined ? String(initialValues.security_deposit) : "");
+    setAnnualRentalIncome(initialValues.annual_rental_income !== undefined ? String(initialValues.annual_rental_income) : "");
+    setLockInPeriod(initialValues.lock_in_period !== undefined ? String(initialValues.lock_in_period) : "");
+    setOwnerName(initialValues.owner_company_name ?? "");
+    setContactNumber(initialValues.phone_number ?? "");
+    setEmailAddress(initialValues.email_address ?? "");
+    setDescription(initialValues.property_description ?? "");
+    setUploadedFiles([]); setPreviewUrls([]);
+    setError(null); setSuccessMessage(null);
   }, [initialValues]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      setUploadedFiles(Array.from(e.target.files));
-    }
+    if (!e.target.files) return;
+    const newFiles = Array.from(e.target.files);
+    setUploadedFiles((prev) => [...prev, ...newFiles]);
+    newFiles.forEach((file) => {
+      if (file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        setPreviewUrls((prev) => [...prev, { file, url }]);
+      }
+    });
   }
 
-  async function handleSubmitToSourceQueue() {
+  function removeFile(file: File) {
+    setUploadedFiles((prev) => prev.filter((f) => f !== file));
+    setPreviewUrls((prev) => {
+      const entry = prev.find((p) => p.file === file);
+      if (entry) URL.revokeObjectURL(entry.url);
+      return prev.filter((p) => p.file !== file);
+    });
+  }
+
+  async function handleSubmit() {
     const isLoggedIn = localStorage.getItem("preleasehub:isLoggedIn") === "true";
+    if (!isLoggedIn) { setAuthOpen(true); return; }
+    setError(null); setSuccessMessage(null);
 
-    if (!isLoggedIn) {
-      setAuthOpen(true);
-      return;
-    }
-
-    setError(null);
-    setSuccessMessage(null);
+    const listingType = intentValueFromKey(listingKey);
 
     const payloadBase = {
-      owner_company_name: ownerCompanyName,
-      phone_number: phoneNumber,
-      email_address: emailAddress,
       property_name: propertyName,
       city,
-      full_address: fullAddress,
-      expected_price_rent: expectedPriceRent,
-      rooms_keys: roomsKeys,
-      current_occupancy_percent: currentOccupancyPercent,
-      current_monthly_income: currentMonthlyIncome,
-      intent: intentValue ?? "",
+      location: locationArea,
       property_type: propertyTypeValue ?? "",
+      rooms: totalRooms,
+      built_up_area: builtUpArea,
+      listing_type: listingType,
+      selling_price: listingKey === "sell" ? sellingPrice : "",
+      expected_monthly_rent: listingKey === "lease" ? expectedMonthlyRent : "",
+      security_deposit: listingKey === "lease" ? securityDeposit : "",
+      annual_rental_income: listingKey === "preleased" ? annualRentalIncome : "",
+      lock_in_period: listingKey === "preleased" ? lockInPeriod : "",
+      owner_company_name: ownerName,
+      phone_number: contactNumber,
+      email_address: emailAddress,
+      property_description: description,
     };
 
     try {
       if (isEditMode && initialValues?.id) {
-        const updatePayload: IUpdatePropertyRequest = {
-          id: initialValues.id,
-          ...payloadBase,
-        };
-
-        if (uploadedFiles.length > 0) {
+        const updatePayload: IUpdatePropertyRequest = { id: initialValues.id, ...payloadBase };
+        if (uploadedFiles.length > 0)
           updatePayload.uploaded_documents =
             uploadedFiles.length === 1 ? uploadedFiles[0] : uploadedFiles;
-        }
-
         const result = await updateProperty(updatePayload).unwrap();
         setSuccessMessage(result.message ?? "Property updated successfully.");
       } else {
@@ -257,176 +302,161 @@ export default function PropertyListingForm({
         const result = await createProperty(createPayload).unwrap();
         setSuccessMessage(result.message ?? "Property submitted successfully.");
       }
-
       onSuccess?.();
     } catch (err: unknown) {
       const apiError = err as { data?: { message?: string }; error?: string };
-      setError(
-        apiError?.data?.message ?? apiError?.error ?? "Something went wrong. Please try again."
-      );
+      setError(apiError?.data?.message ?? apiError?.error ?? "Something went wrong. Please try again.");
     }
   }
 
   return (
     <>
-      <form
-        className={
-          className ??
-          "rounded-[30px] border border-[#d5dee9] bg-[#f5f6f8] p-5 shadow-[0_12px_30px_rgba(22,31,53,0.06)] sm:p-6"
-        }
-      >
+      <div className={className ?? "flex flex-col gap-4"}>
+
+        {/* ── Property Details ── */}
+        <Section title="Property Details">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <input className={inputClass} placeholder="Property Name" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} />
+            <input className={inputClass} placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
+            <input className={inputClass} placeholder="Location / Area" value={locationArea} onChange={(e) => setLocationArea(e.target.value)} />
+            <SelectBox
+              label={propertyTypeLabel}
+              placeholder="Property Type"
+              options={PROPERTY_TYPE_OPTIONS}
+              onSelect={(lbl, val) => { setPropertyTypeLabel(lbl); setPropertyTypeValue(val); }}
+            />
+            <input className={inputClass} placeholder="Total Rooms" type="number" value={totalRooms} onChange={(e) => setTotalRooms(e.target.value)} />
+            <input className={inputClass} placeholder="Built-up Area (sq ft)" value={builtUpArea} onChange={(e) => setBuiltUpArea(e.target.value)} />
+          </div>
+        </Section>
+
+        {/* ── Listing Type ── */}
+        <Section title="Listing Type">
+          <div className="mb-4 grid grid-cols-3 gap-3">
+            {LISTING_TYPES.map((type) => {
+              const active = listingKey === type.key;
+              return (
+                <button
+                  key={type.key}
+                  type="button"
+                  onClick={() => setListingKey(type.key)}
+                  className={`flex flex-col gap-1 rounded-[12px] border-[1.5px] px-4 py-3.5 text-left transition-colors ${
+                    active ? "border-[#4f46e5] bg-[#eef2ff]" : "border-[#e5e7eb] bg-white hover:border-[#a5b4fc]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] ${active ? "border-[#4f46e5]" : "border-[#d1d5db]"}`}>
+                      {active && <span className="h-2 w-2 rounded-full bg-[#4f46e5]" />}
+                    </span>
+                    <span className="text-[15px] font-semibold text-[#111827]">{type.label}</span>
+                  </div>
+                  <span className="pl-6 text-[13px] leading-tight text-[#6b7280]">{type.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {listingKey === "sell" && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <input className={inputClass} placeholder="Selling Price" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} />
+            </div>
+          )}
+          {listingKey === "lease" && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <input className={inputClass} placeholder="Expected Monthly Rent" value={expectedMonthlyRent} onChange={(e) => setExpectedMonthlyRent(e.target.value)} />
+              <input className={inputClass} placeholder="Security Deposit" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
+            </div>
+          )}
+          {listingKey === "preleased" && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <input className={inputClass} placeholder="Annual Rental Income" value={annualRentalIncome} onChange={(e) => setAnnualRentalIncome(e.target.value)} />
+              <input className={inputClass} placeholder="Lock-in Period" value={lockInPeriod} onChange={(e) => setLockInPeriod(e.target.value)} />
+            </div>
+          )}
+        </Section>
+
+        {/* ── Owner Details ── */}
+        <Section title="Owner Details">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <input className={inputClass} placeholder="Owner Name" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
+            <input className={inputClass} placeholder="Contact Number" type="tel" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
+            <input className={inputClass} placeholder="Email Address" type="email" value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} />
+          </div>
+        </Section>
+
+        {/* ── Description + Upload side by side ── */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <input
-            className={inputClass}
-            placeholder="Owner / Company Name"
-            value={ownerCompanyName}
-            onChange={(e) => setOwnerCompanyName(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Email Address"
-            type="email"
-            value={emailAddress}
-            onChange={(e) => setEmailAddress(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Property Name"
-            value={propertyName}
-            onChange={(e) => setPropertyName(e.target.value)}
-          />
+          <Section title="Property Description">
+            <textarea
+              className="h-[110px] w-full resize-none rounded-[10px] border border-[#d1d5db] bg-white px-4 py-3 text-[15px] text-[#1f2937] outline-none placeholder:text-[#9ca3af] focus:border-[#4f46e5] transition-colors"
+              placeholder="Write a detailed description of your property…"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </Section>
 
-          <SelectBox
-            label={propertyTypeLabel}
-            placeholder="Property Type"
-            open={showTypeMenu}
-            onToggle={() => {
-              setShowTypeMenu((prev) => !prev);
-              setShowIntentMenu(false);
-            }}
-            onSelect={(lbl, val) => {
-              setPropertyTypeLabel(lbl);
-              setPropertyTypeValue(val);
-              setShowTypeMenu(false);
-            }}
-            options={PROPERTY_TYPE_OPTIONS}
-          />
+          <Section title="Photos & Documents">
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-[10px] border-[1.5px] border-dashed border-[#d1d5db] bg-[#fafafa] py-6 text-center transition-colors hover:border-[#4f46e5] hover:bg-[#f5f3ff]">
+              <Upload className="mb-2 h-6 w-6 text-[#9ca3af]" />
+              <p className="text-[14px] font-medium text-[#374151]">
+                {uploadedFiles.length > 0
+                  ? `${uploadedFiles.length} file${uploadedFiles.length > 1 ? "s" : ""} — add more`
+                  : "Upload photos & documents"}
+              </p>
+              <p className="mt-1 text-[12px] text-[#9ca3af]">Images, PDFs, brochures</p>
+              <input type="file" className="hidden" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleFileChange} />
+            </label>
 
-          <input
-            className={inputClass}
-            placeholder="City"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          />
+            {previewUrls.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {previewUrls.map(({ file, url }) => (
+                  <div key={url} className="relative h-16 w-16 overflow-hidden rounded-[8px] border border-[#e5e7eb]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={file.name} className="h-full w-full object-cover" />
+                    <button type="button" onClick={() => removeFile(file)}
+                      className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(17,24,39,0.70)] text-white">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          <SelectBox
-            label={intentLabel}
-            placeholder="Intent"
-            open={showIntentMenu}
-            onToggle={() => {
-              setShowIntentMenu((prev) => !prev);
-              setShowTypeMenu(false);
-            }}
-            onSelect={(lbl, val) => {
-              setIntentLabel(lbl);
-              setIntentValue(val);
-              setShowIntentMenu(false);
-            }}
-            options={INTENT_OPTIONS}
-          />
-
-          <input
-            className={inputClass}
-            placeholder="Expected Sale Price / Rent"
-            value={expectedPriceRent}
-            onChange={(e) => setExpectedPriceRent(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Rooms / Keys"
-            value={roomsKeys}
-            onChange={(e) => setRoomsKeys(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Current Occupancy %"
-            value={currentOccupancyPercent}
-            onChange={(e) => setCurrentOccupancyPercent(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Current Monthly Income"
-            value={currentMonthlyIncome}
-            onChange={(e) => setCurrentMonthlyIncome(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="Full Address"
-            value={fullAddress}
-            onChange={(e) => setFullAddress(e.target.value)}
-          />
+            {uploadedFiles.filter((f) => !f.type.startsWith("image/")).map((file) => (
+              <div key={file.name + file.size} className="mt-2 flex items-center gap-2 rounded-[8px] border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2">
+                <FileText className="h-4 w-4 flex-shrink-0 text-[#6b7280]" />
+                <span className="flex-1 truncate text-[13px] text-[#374151]">{file.name}</span>
+                <button type="button" onClick={() => removeFile(file)} className="text-[#9ca3af] hover:text-[#374151]">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </Section>
         </div>
 
-        <label className="mt-4 flex h-[126px] w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-[#c8d3e2] bg-[#f5f7fa] text-center">
-          <Upload className="h-6 w-6 text-[#5e728c]" />
-          <p className="mt-3 text-[17px] font-medium leading-none text-[#3a4f6b]">
-            {uploadedFiles.length > 0
-              ? `${uploadedFiles.length} file${uploadedFiles.length > 1 ? "s" : ""} selected`
-              : "Upload property photos and documents"}
-          </p>
-          <p className="mt-2 text-[14px] text-[#7a8da7]">
-            Images, lease copies, ownership proof, brochures
-          </p>
-          <input type="file" className="hidden" multiple onChange={handleFileChange} />
-        </label>
+        {error && <p className="rounded-[10px] bg-red-50 px-4 py-3 text-[14px] text-red-600">{error}</p>}
+        {successMessage && <p className="rounded-[10px] bg-green-50 px-4 py-3 text-[14px] text-green-700">{successMessage}</p>}
 
-        {error && (
-          <p className="mt-3 text-[14px] text-red-500">{error}</p>
-        )}
-        {successMessage && (
-          <p className="mt-3 text-[14px] text-green-600">{successMessage}</p>
-        )}
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {/* ── Buttons ── */}
+        <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={handleSubmitToSourceQueue}
+            onClick={handleSubmit}
             disabled={isLoading}
-            className="h-12 rounded-[18px] bg-[#020a25] text-[15px] font-medium text-white transition hover:opacity-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="h-12 rounded-[12px] bg-[#111827] text-[15px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? (isEditMode ? "Updating…" : "Submitting…") : submitLabel}
           </button>
-          {isEditMode ? (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="h-12 rounded-[18px] border border-[#c9d4e3] bg-[#f7f8fa] text-[15px] font-medium text-[#111827] transition hover:bg-white"
-            >
+          {isEditMode && (
+            <button type="button" onClick={onCancel}
+              className="h-12 rounded-[12px] border border-[#d1d5db] bg-white text-[15px] font-medium text-[#111827] transition-colors hover:bg-[#f9fafb]">
               Cancel Update
             </button>
-          ) : (
-            <button
-              type="button"
-              className="h-12 rounded-[18px] border border-[#c9d4e3] bg-[#f7f8fa] text-[15px] font-medium text-[#111827] transition hover:bg-white"
-            >
-              WhatsApp Seller Desk
-            </button>
-          )}
+          ) }
         </div>
-      </form>
+      </div>
 
-      <AuthPopup
-        isOpen={authOpen}
-        onClose={() => setAuthOpen(false)}
-        defaultTab="login"
-        redirectToDashboard={false}
-      />
+      <AuthPopup isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultTab="login" redirectToDashboard={false} />
     </>
   );
 }

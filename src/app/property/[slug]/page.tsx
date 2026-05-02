@@ -1,5 +1,4 @@
 import PropertyDetailApiLoader from "@/src/components/property/PropertyDetailApiLoader";
-import { getPropertyBySlug } from "@/src/data/properties";
 import { PropertySource } from "@/src/types/property";
 
 interface PropertyPageProps {
@@ -28,14 +27,13 @@ export default async function PropertyPage({
   const source = getSourceFromSearchParam(resolvedSearchParams.source);
   const rawId = resolvedSearchParams.id;
   const propertyId = Array.isArray(rawId) ? rawId[0] : rawId;
-  const fallbackProperty = getPropertyBySlug(slug, source);
 
   return (
     <PropertyDetailApiLoader
       slug={slug}
       propertyId={propertyId}
       source={source}
-      fallbackProperty={fallbackProperty ?? null}
+      fallbackProperty={null}
     />
   );
 }

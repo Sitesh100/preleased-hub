@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
 import { ChevronRight, LayoutGrid, LogOut, Search, FileText } from 'lucide-react';
 import Badge from '@/src/components/dashboard/Badge';
 import {
@@ -16,6 +17,8 @@ import {
   getDashboardSession,
   roleLabel,
 } from '@/src/lib/dashboard-auth';
+import { setLogOut } from '@/src/redux/features/auth/authSlice';
+import type { AppDispatch } from '@/src/redux/store';
 
 interface BuyerLesseeDashboardProps {
   role: Extract<DashboardRole, 'buyer' | 'lessee'>;
@@ -128,6 +131,7 @@ function getErrorMessage(error: unknown): string {
 
 export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps) {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const [session, setSession] = useState(() => getDashboardSession());
   const [active, setActive] = useState<BuyerNav>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -154,8 +158,13 @@ export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps
   }
 
   function handleLogout() {
+    dispatch(setLogOut());
     clearDashboardSession();
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('preleasehub:isLoggedIn');
+    }
     setSession(null);
+    router.replace('/');
   }
 
   const screenTitle = active === 'dashboard' ? `${roleTitle} Dashboard` : 'My Submitted Requests';

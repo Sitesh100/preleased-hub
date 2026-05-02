@@ -40,7 +40,15 @@ export const defaultFilters: FilterState = {
 const AMENITY_OPTIONS = ["Garden", "Storage", "Gym", "Pool", "Parking", "Security"];
 const BEDROOM_OPTIONS = ["Any bedrooms", "1", "2", "3", "4", "5+"];
 const BATHROOM_OPTIONS = ["Any bathrooms", "1", "2", "3", "4+"];
-const PROPERTY_TYPE_OPTIONS = ["Any type", "Hotel", "Service Apartment", "Resort", "Villa", "Commercial"];
+const PROPERTY_TYPE_OPTIONS = [
+  "Any type",
+  "Hotel",
+  "Resort",
+  "Villa",
+  "Service Apartment",
+  "Holiday Home",
+  "Commercial",
+];
 const SORT_FIELD_OPTIONS: { label: string; value: SortField }[] = [
   { label: "Price", value: "price" },
   { label: "ROI", value: "roi" },

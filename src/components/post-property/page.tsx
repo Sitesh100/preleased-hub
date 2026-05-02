@@ -4,7 +4,8 @@ import PropertyListingForm from "@/src/components/post-property/PropertyListingF
 
 function Pill({ text }: { text: string }) {
   return (
-    <div className="rounded-[16px] border border-[#d0dae6] bg-[#eef2f6] px-4 py-4 text-[17px] leading-[1.2] text-[#334b69]">
+    <div className="flex items-center gap-2.5 rounded-[10px] border border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 text-[14px] text-[#334b69]">
+      <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#4f46e5]" />
       {text}
     </div>
   );
@@ -12,33 +13,89 @@ function Pill({ text }: { text: string }) {
 
 export default function PostPropertyPage() {
   return (
-    <main id="main" className="min-h-screen bg-[#f5f5f5]">
-      <div className="mx-auto w-full max-w-[1260px] px-5 pb-16 pt-16 lg:px-8">
-        <section className="grid gap-10 lg:grid-cols-[1fr_560px] lg:items-start">
-          <div className="pt-1">
-            <span className="inline-flex rounded-full bg-[#020a25] px-3 py-1 text-[16px] font-semibold leading-none text-white">
-              List Property
-            </span>
+    <main id="main" className="min-h-screen bg-[#f0f2f5]">
+      <div className="mx-auto w-full max-w-[1300px] px-5 pb-20 pt-10 lg:px-10">
 
-            <h1 className="mt-6 max-w-[680px] text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-[#020a25] sm:text-5xl lg:text-[54px]">
-              List verified hospitality assets for sale or rent
-            </h1>
+        {/* ── Page header ── */}
+        <div className="mb-8">
+          <span className="inline-flex rounded-full bg-[#020a25] px-3 py-1 text-[12px] font-semibold leading-none text-white">
+            List Property
+          </span>
+          <h1 className="mt-3 text-[28px] font-bold leading-[1.15] tracking-[-0.02em] text-[#020a25] sm:text-[32px]">
+            List verified hospitality assets for sale or rent
+          </h1>
+          <p className="mt-2 max-w-[520px] text-[14px] leading-[1.55] text-[#4b607d]">
+            Built for owners who want a trusted platform and strong operator closure support
+            within 45 days for suitable assets.
+          </p>
+        </div>
 
-            <p className="mt-5 max-w-[760px] text-[18px] leading-[1.45] text-[#4b607d]">
-              This seller flow is built for owners who want a trusted platform and strong
-              operator closure support within 45 days for suitable assets.
-            </p>
+        {/* ── 35 / 65 two-column layout ── */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <Pill text="Intent: Sell / Lease / Both" />
-              <Pill text="Verification-ready field capture" />
-              <Pill text="Investor-facing commercial data" />
-              <Pill text="Operator-fit asset screening" />
+          {/* Left — 35% */}
+          <aside className="w-full lg:w-[35%] lg:flex-shrink-0">
+            <div className="flex flex-col gap-4">
+
+              {/* What you get */}
+              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+                <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]">
+                  What you get
+                </p>
+                <div className="flex flex-col gap-3">
+                  <Pill text="Intent: Sell / Lease / Both" />
+                  <Pill text="Verification-ready field capture" />
+                  <Pill text="Investor-facing commercial data" />
+                  <Pill text="Operator-fit asset screening" />
+                </div>
+              </div>
+
+              {/* Why list with us */}
+              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+                <p className="mb-3 text-[15px] font-semibold text-[#111827]">
+                  Why list with PreleasHub?
+                </p>
+                <ul className="flex flex-col gap-2.5">
+                  {[
+                    "Reach 2,000+ verified hospitality investors",
+                    "Dedicated relationship manager assigned",
+                    "Closure support within 45 days",
+                    "Zero listing fee — pay only on success",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-[13px] text-[#4b607d]">
+                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#4f46e5]" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Need help */}
+              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+                <p className="text-[15px] font-semibold text-[#111827]">Need help?</p>
+                <p className="mt-1.5 text-[13px] leading-[1.55] text-[#6b7280]">
+                  Our seller desk is available Mon–Sat, 10am–7pm IST. Reach us on WhatsApp for
+                  quick assistance.
+                </p>
+                <a
+                  href="https://wa.me/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 flex h-10 items-center justify-center rounded-[10px] bg-[#25d366] text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  WhatsApp Us
+                </a>
+              </div>
+
             </div>
+          </aside>
+
+          {/* Right — 65% */}
+          <div className="w-full lg:w-[65%]">
+            <PropertyListingForm />
           </div>
 
-          <PropertyListingForm />
-        </section>
+        </div>
       </div>
     </main>
   );
