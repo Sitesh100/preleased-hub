@@ -120,19 +120,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </div>
 
         {/* ── Actions ── */}
-        <div className="mt-auto grid grid-cols-1 gap-2.5 pt-1 sm:grid-cols-2">
+        <div className="mt-auto pt-1">
           <button
             className="py-2.5 px-4 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:border-slate-800 hover:text-slate-900 transition-colors duration-200 cursor-pointer"
             onClick={() => onViewDetails?.(property)}
           >
             View Details
           </button>
-          <button
-            className="py-2.5 px-4 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 transition-colors duration-200 cursor-pointer"
-            onClick={() => onContact?.(property)}
-          >
-            Contact
-          </button>
+          
         </div>
       </div>
     </div>
