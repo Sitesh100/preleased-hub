@@ -8,7 +8,7 @@ import PropertyListingForm, {
 } from '@/src/components/post-property/PropertyListingForm';
 import {
   useDeletePropertyMutation,
-  useViewPropertyQuery,
+  usePropertyViewQuery,
 } from '@/src/redux/features/property/propertyApi';
 
 interface ApiPropertyItem {
@@ -133,7 +133,7 @@ export default function PropertiesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyFormInitialValues | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
-  const { data, isLoading, refetch } = useViewPropertyQuery();
+  const { data, isLoading, refetch } = usePropertyViewQuery();
   const [deleteProperty, { isLoading: isDeleting }] = useDeletePropertyMutation();
 
   const properties = useMemo(() => extractApiPropertyList(data), [data]);

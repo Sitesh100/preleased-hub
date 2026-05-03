@@ -18,8 +18,8 @@ type Tab = 'login' | 'signup';
 type UserType = 'Seller' | 'Buyer' | 'Lessee';
 
 const REGISTER_ROLE_MAP: Record<UserType, number> = {
-  Seller: 1,
-  Buyer: 2,
+  Buyer: 1,
+  Seller: 2,
   Lessee: 3,
 };
 

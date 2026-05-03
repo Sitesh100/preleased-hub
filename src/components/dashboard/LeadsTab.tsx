@@ -7,9 +7,9 @@ import StatCard from './StatCard';
 import Badge from './Badge';
 import {
   IAdminLeadAction,
-  IGetMyInquiriesQueryResponse,
+  IGetSellerReceivedInquiriesQueryResponse,
   IMyInquiryItem,
-  useGetMyInquiriesQuery,
+  useGetSellerReceivedInquiriesQuery,
   useHandleBuyerOperatorLeadMutation,
   useHandleLesseeOperatorLeadMutation,
 } from '@/src/redux/features/property/propertyApi';
@@ -50,7 +50,9 @@ function firstText(...values: unknown[]): string | null {
   return null;
 }
 
-function extractInquiries(response: IGetMyInquiriesQueryResponse | undefined): IMyInquiryItem[] {
+function extractInquiries(
+  response: IGetSellerReceivedInquiriesQueryResponse | undefined
+): IMyInquiryItem[] {
   if (Array.isArray(response)) {
     return response;
   }
@@ -147,7 +149,7 @@ function getLeadChannel(leadType: string): 'buyer' | 'lessee' {
 }
 
 export default function LeadsTab() {
-  const { data, isLoading, isError, error, refetch } = useGetMyInquiriesQuery();
+  const { data, isLoading, isError, error, refetch } = useGetSellerReceivedInquiriesQuery();
   const [handleBuyerLead, { isLoading: isBuyerActionLoading }] = useHandleBuyerOperatorLeadMutation();
   const [handleLesseeLead, { isLoading: isLesseeActionLoading }] = useHandleLesseeOperatorLeadMutation();
   const [activeActionId, setActiveActionId] = useState<string | null>(null);

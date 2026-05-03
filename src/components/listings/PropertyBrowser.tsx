@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import FilterBar, {
   defaultFilters,
@@ -9,55 +9,114 @@ import FilterBar, {
 import PropertyCard from "@/src/components/listings/PropertyCard";
 import AuthPopup from "@/src/components/auth/AuthPopup";
 import { Property, PropertySource, PropertyStatus } from "@/src/types/property";
+import { useLazyFilterPropertiesQuery } from "@/src/redux/features/property/propertyApi";
 
-function applyFilters(properties: Property[], filters: FilterState): Property[] {
-  let result = [...properties];
+function toNumber(value: unknown, fallback = 0): number {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+}
 
-  result = result.filter(
-    (property) => property.propertyStatus === filters.propertyStatus
-  );
+function toText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
 
-  if (filters.search.trim()) {
-    const query = filters.search.toLowerCase();
-    result = result.filter(
-      (property) =>
-        property.title.toLowerCase().includes(query) ||
-        property.city.toLowerCase().includes(query) ||
-        property.propertyType.toLowerCase().includes(query)
-    );
+function toPropertyType(value: unknown): Property["propertyType"] {
+  const normalized = typeof value === "string" ? value.toLowerCase().trim() : String(value);
+
+  if (normalized === "hotel" || normalized === "1") return "Hotel";
+  if (normalized === "resort" || normalized === "2") return "Resort";
+  if (normalized === "villa" || normalized === "3") return "Villa";
+  if (normalized === "service apartment" || normalized === "service_apartment" || normalized === "4") return "Service Apartment";
+  if (normalized === "holiday home" || normalized === "holiday_home" || normalized === "5") return "Holiday Home";
+  return "Commercial";
+}
+
+function toPropertyStatus(value: unknown): PropertyStatus {
+  const normalized = typeof value === "string" ? value.toLowerCase().trim() : String(value);
+
+  if (normalized === "lease" || normalized === "lease-ready" || normalized === "2") {
+    return "Lease-Ready";
+  }
+  if (normalized === "sell" || normalized === "sale" || normalized === "1") {
+    return "Sale";
+  }
+  return "Pre-Leased";
+}
+
+function toImageUrl(value: unknown): string {
+  if (Array.isArray(value) && value.length > 0) {
+    const first = value[0];
+    if (first && typeof first === "object") {
+      const filePath = (first as { document_file?: unknown }).document_file;
+      if (typeof filePath === "string" && filePath.trim()) {
+        if (filePath.startsWith("http://") || filePath.startsWith("https://")) return filePath;
+        return `https://jlsxgq9c-8000.inc1.devtunnels.ms${filePath}`;
+      }
+    }
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+  return "";
+}
+
+function normalizeApiProperties(payload: unknown): Property[] {
+  const responseData =
+    payload && typeof payload === "object" && "data" in payload
+      ? (payload as { data?: unknown }).data
+      : payload;
+
+  if (!Array.isArray(responseData)) {
+    return [];
   }
 
-  if (filters.priceMin !== "") {
-    result = result.filter(
-      (property) => property.propertyPrice >= Number(filters.priceMin)
-    );
-  }
+  const normalizedProperties: Property[] = [];
+  responseData.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const property = item as Record<string, unknown>;
+    const id = toText(property.id, `API-${index + 1}`);
+    const listingType = toNumber(property.listing_type, 0);
+    const propertyStatus = toPropertyStatus(listingType);
+    const annualRentalIncome = toNumber(property.annual_rental_income, 0);
+    const sellingPrice = toNumber(property.selling_price, 0);
+    const expectedMonthlyRent = toNumber(property.expected_monthly_rent, 0);
+    const monthlyRent = listingType === 3 ? annualRentalIncome / 12 : expectedMonthlyRent;
+    const roi = listingType === 3 && sellingPrice > 0 ? (annualRentalIncome / sellingPrice) * 100 : 0;
 
-  if (filters.priceMax !== "") {
-    result = result.filter(
-      (property) => property.propertyPrice <= Number(filters.priceMax)
-    );
-  }
-
-  if (filters.propertyType !== "Any type") {
-    result = result.filter(
-      (property) => property.propertyType === filters.propertyType
-    );
-  }
-
-  result.sort((a, b) => {
-    const sortDiffs: Record<string, number> = {
-      price: a.propertyPrice - b.propertyPrice,
-      roi: a.roi - b.roi,
-      area: a.areaInSqFt - b.areaInSqFt,
-      rent: a.monthlyRent - b.monthlyRent,
-    };
-
-    const difference = sortDiffs[filters.sortField] ?? 0;
-    return filters.sortOrder === "asc" ? difference : -difference;
+    normalizedProperties.push({
+      id,
+      slug: toText(property.slug, `${id.toLowerCase().replace(/\s+/g, "-")}-${index + 1}`),
+      source: "listings",
+      title: toText(property.property_name, `Property ${index + 1}`),
+      city: toText(property.city, "Unknown City"),
+      state: toText(property.location, toText(property.state, "")),
+      country: toText(property.country, "India"),
+      propertyType: toPropertyType(property.property_type),
+      areaInSqFt: toNumber(property.built_up_area, 0),
+      propertyPrice: sellingPrice,
+      monthlyRent,
+      roi,
+      imageUrl: toImageUrl(property.documents),
+      currency: "₹",
+      propertyStatus,
+      statusLabel: toText(property.status, propertyStatus),
+      listingType,
+      description: toText(property.property_description, "No description available."),
+      highlights: [],
+      amenities: [],
+      leaseTerm: toText(property.lock_in_period, "N/A"),
+      occupancyStatus: "N/A",
+      listedDate: toText(property.created_at, "Recently listed"),
+    });
   });
 
-  return result;
+  return normalizedProperties;
+}
+
+function listingTypeFromStatus(status: PropertyStatus): string {
+  if (status === "Sale") return "1";
+  if (status === "Lease-Ready") return "2";
+  return "3";
 }
 
 interface PropertyBrowserProps {
@@ -84,26 +143,62 @@ export default function PropertyBrowser({
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [pendingDetailProperty, setPendingDetailProperty] = useState<Property | null>(null);
+  const [triggerFilterProperties, { data: filteredApiData, isFetching: isFiltering }] =
+    useLazyFilterPropertiesQuery();
   const initialStatus = getStatusFromIntent(initialIntent);
-  const initialFilters = { ...defaultFilters, propertyStatus: initialStatus };
+  const initialFilters = {
+    ...defaultFilters,
+    propertyStatus: initialStatus,
+    listingType: initialStatus,
+  };
 
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [appliedFilters, setAppliedFilters] =
     useState<FilterState>(initialFilters);
 
-  const filteredProperties = useMemo(
-    () => applyFilters(properties, appliedFilters),
-    [appliedFilters, properties]
-  );
+  const filteredProperties = useMemo(() => {
+    const apiFilteredProperties = normalizeApiProperties(filteredApiData);
+    if (apiFilteredProperties.length > 0) {
+      return apiFilteredProperties;
+    }
+    return properties.filter((property) => property.propertyStatus === appliedFilters.propertyStatus);
+  }, [appliedFilters.propertyStatus, filteredApiData, properties]);
+
+  function applyServerFilter(nextFilters: FilterState) {
+    void triggerFilterProperties({
+      location: nextFilters.location || undefined,
+      property_type: nextFilters.propertyType || undefined,
+      listing_type: listingTypeFromStatus(nextFilters.propertyStatus),
+      area: nextFilters.area || undefined,
+    });
+  }
+
+  useEffect(() => {
+    applyServerFilter(initialFilters);
+    // this should run once for initial page load filters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleReset() {
-    setFilters(defaultFilters);
-    setAppliedFilters(defaultFilters);
+    const nextFilters = {
+      ...defaultFilters,
+      propertyStatus: appliedFilters.propertyStatus,
+      listingType: appliedFilters.propertyStatus,
+    };
+    setFilters(nextFilters);
+    setAppliedFilters(nextFilters);
+    applyServerFilter(nextFilters);
   }
 
   function handleStatusChange(status: PropertyStatus) {
-    setFilters((prev) => ({ ...prev, propertyStatus: status }));
-    setAppliedFilters((prev) => ({ ...prev, propertyStatus: status }));
+    const nextFilters = {
+      ...filters,
+      propertyStatus: status,
+      listingType: status,
+    };
+    setFilters(nextFilters);
+    setAppliedFilters(nextFilters);
+    applyServerFilter(nextFilters);
   }
 
   function isLoggedIn(): boolean {
@@ -156,14 +251,20 @@ export default function PropertyBrowser({
       <FilterBar
         filters={filters}
         onChange={setFilters}
-        onApply={setAppliedFilters}
+        onApply={(nextFilters) => {
+          setAppliedFilters(nextFilters);
+          applyServerFilter(nextFilters);
+        }}
         onReset={handleReset}
         onStatusChange={handleStatusChange}
       />
 
       <p className="text-sm text-slate-500 mt-5 mb-4">
-        {filteredProperties.length} propert
-        {filteredProperties.length === 1 ? "y" : "ies"} found
+        {isFiltering
+          ? "Loading filtered properties..."
+          : `${filteredProperties.length} ${
+              filteredProperties.length === 1 ? "property" : "properties"
+            } found`}
       </p>
 
       {filteredProperties.length === 0 ? (

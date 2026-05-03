@@ -29,6 +29,13 @@ export interface ICreateInquiryRequest {
   property: string;
 }
 
+export interface IFilterPropertiesRequest {
+  location?: string;
+  property_type?: string;
+  listing_type?: string | number;
+  area?: string | number;
+}
+
 export type IAdminLeadAction = "approve" | "disapprove" | "send_link";
 
 export interface IHandleAdminLeadRequest {
@@ -53,6 +60,8 @@ export type IGetMyInquiriesResponse =
       [key: string]: unknown;
     };
 
+export type IGetSellerReceivedInquiriesResponse = IGetMyInquiriesResponse;
+
 export interface ICreatePropertyResponse {
   status?: boolean;
   message?: string;
@@ -64,7 +73,10 @@ export type IUpdatePropertyResponse = ICreatePropertyResponse;
 export type IDeletePropertyResponse = ICreatePropertyResponse;
 export type ICreateInquiryResponse = ICreatePropertyResponse;
 export type IGetMyInquiriesQueryResponse = IGetMyInquiriesResponse;
+export type IGetSellerReceivedInquiriesQueryResponse = IGetSellerReceivedInquiriesResponse;
 export type IHandleAdminLeadResponse = ICreatePropertyResponse;
+export type IFilterPropertiesResponse = unknown;
+export type IPropertyViewResponse = unknown;
 
 
 function appendFormData<T extends object>(body: T) {
@@ -107,6 +119,14 @@ const propertyApi = baseApi.injectEndpoints({
       transformResponse: (response: IViewPropertyResponse) => response,
     }),
 
+    propertyView: builder.query<IPropertyViewResponse, void>({
+      query: () => ({
+        url: "/user/v1/property/listing/property_view/",
+        method: "GET",
+      }),
+      transformResponse: (response: IPropertyViewResponse) => response,
+    }),
+
     updateProperty: builder.mutation<IUpdatePropertyResponse, IUpdatePropertyRequest>({
       query: (body: IUpdatePropertyRequest) => ({
         url: "/user/v1/property/listing/property_update/",
@@ -141,6 +161,23 @@ const propertyApi = baseApi.injectEndpoints({
       transformResponse: (response: IGetMyInquiriesQueryResponse) => response,
     }),
 
+    getSellerReceivedInquiries: builder.query<IGetSellerReceivedInquiriesQueryResponse, void>({
+      query: () => ({
+        url: "/user/v1/property/inquiry/seller_received_inquiries/",
+        method: "GET",
+      }),
+      transformResponse: (response: IGetSellerReceivedInquiriesQueryResponse) => response,
+    }),
+
+    filterProperties: builder.query<IFilterPropertiesResponse, IFilterPropertiesRequest>({
+      query: (params: IFilterPropertiesRequest) => ({
+        url: "/user/v1/property/listing/filter_properties/",
+        method: "GET",
+        params,
+      }),
+      transformResponse: (response: IFilterPropertiesResponse) => response,
+    }),
+
     handleBuyerOperatorLead: builder.mutation<IHandleAdminLeadResponse, IHandleAdminLeadRequest>({
       query: (body: IHandleAdminLeadRequest) => ({
         url: "/adminside/v1/property/inquiry/handle_buyer_operator_lead/",
@@ -163,11 +200,14 @@ const propertyApi = baseApi.injectEndpoints({
 
 export const {
   useCreatePropertyMutation,
+  usePropertyViewQuery,
   useViewPropertyQuery,
   useUpdatePropertyMutation,
   useDeletePropertyMutation,
   useCreateInquiryMutation,
   useGetMyInquiriesQuery,
+  useGetSellerReceivedInquiriesQuery,
+  useLazyFilterPropertiesQuery,
   useHandleBuyerOperatorLeadMutation,
   useHandleLesseeOperatorLeadMutation,
 } = propertyApi;
