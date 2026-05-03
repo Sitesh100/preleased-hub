@@ -91,6 +91,33 @@ export default function AuthPopup({
     return DASHBOARD_ROLE_MAP[userType];
   }
 
+  function parseDashboardRoleFromLoginResponse(response: unknown): DashboardRole | null {
+    if (!response || typeof response !== 'object') {
+      return null;
+    }
+
+    const record = response as Record<string, unknown>;
+    const data = record.data && typeof record.data === 'object' ? (record.data as Record<string, unknown>) : null;
+    const rawRole =
+      record.role ?? record.user_role ?? record.userType ?? record.user_type ??
+      data?.role ?? data?.user_role ?? data?.userType ?? data?.user_type;
+
+    if (typeof rawRole === 'number') {
+      if (rawRole === 1) return 'buyer';
+      if (rawRole === 2) return 'seller';
+      if (rawRole === 3) return 'lessee';
+    }
+
+    if (typeof rawRole === 'string') {
+      const normalized = rawRole.trim().toLowerCase();
+      if (normalized === '1' || normalized.includes('buyer')) return 'buyer';
+      if (normalized === '2' || normalized.includes('seller')) return 'seller';
+      if (normalized === '3' || normalized.includes('lessee')) return 'lessee';
+    }
+
+    return null;
+  }
+
   function renderRoleSelector() {
     return (
       <div>
@@ -147,7 +174,7 @@ export default function AuthPopup({
         window.localStorage.setItem('preleasehub:isLoggedIn', 'true');
       }
 
-      const dashboardRole = getDashboardRole();
+      const dashboardRole = parseDashboardRoleFromLoginResponse(response) ?? getDashboardRole();
       setDashboardSession({
         role: dashboardRole,
         email: loginPhone.trim(),
@@ -285,8 +312,6 @@ export default function AuthPopup({
             {/* ── LOGIN FORM ── */}
             {tab === 'login' && (
               <form onSubmit={handleLogin} className="space-y-4">
-                {renderRoleSelector()}
-
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
                     Phone Number

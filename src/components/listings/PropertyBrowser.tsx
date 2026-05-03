@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import FilterBar, {
   defaultFilters,
   FilterState,
+  ListingFilterType,
 } from "@/src/components/listings/FilterBar";
 import PropertyCard from "@/src/components/listings/PropertyCard";
 import AuthPopup from "@/src/components/auth/AuthPopup";
@@ -113,9 +114,10 @@ function normalizeApiProperties(payload: unknown): Property[] {
   return normalizedProperties;
 }
 
-function listingTypeFromStatus(status: PropertyStatus): string {
-  if (status === "Sale") return "1";
-  if (status === "Lease-Ready") return "2";
+function listingTypeFromFilter(listingType: ListingFilterType): string | undefined {
+  if (listingType === "All") return undefined;
+  if (listingType === "Sale") return "1";
+  if (listingType === "Lease-Ready") return "2";
   return "3";
 }
 
@@ -149,7 +151,7 @@ export default function PropertyBrowser({
   const initialFilters = {
     ...defaultFilters,
     propertyStatus: initialStatus,
-    listingType: initialStatus,
+    listingType: "All" as const,
   };
 
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -157,18 +159,20 @@ export default function PropertyBrowser({
     useState<FilterState>(initialFilters);
 
   const filteredProperties = useMemo(() => {
-    const apiFilteredProperties = normalizeApiProperties(filteredApiData);
-    if (apiFilteredProperties.length > 0) {
-      return apiFilteredProperties;
+    if (filteredApiData !== undefined) {
+      return normalizeApiProperties(filteredApiData);
     }
-    return properties.filter((property) => property.propertyStatus === appliedFilters.propertyStatus);
-  }, [appliedFilters.propertyStatus, filteredApiData, properties]);
+    if (appliedFilters.listingType === "All") {
+      return properties;
+    }
+    return properties.filter((property) => property.propertyStatus === appliedFilters.listingType);
+  }, [appliedFilters.listingType, filteredApiData, properties]);
 
   function applyServerFilter(nextFilters: FilterState) {
     void triggerFilterProperties({
       location: nextFilters.location || undefined,
       property_type: nextFilters.propertyType || undefined,
-      listing_type: listingTypeFromStatus(nextFilters.propertyStatus),
+      listing_type: listingTypeFromFilter(nextFilters.listingType),
       area: nextFilters.area || undefined,
     });
   }
@@ -183,18 +187,18 @@ export default function PropertyBrowser({
     const nextFilters = {
       ...defaultFilters,
       propertyStatus: appliedFilters.propertyStatus,
-      listingType: appliedFilters.propertyStatus,
+      listingType: "All" as const,
     };
     setFilters(nextFilters);
     setAppliedFilters(nextFilters);
     applyServerFilter(nextFilters);
   }
 
-  function handleStatusChange(status: PropertyStatus) {
+  function handleStatusChange(status: ListingFilterType) {
     const nextFilters = {
       ...filters,
-      propertyStatus: status,
       listingType: status,
+      propertyStatus: status === "All" ? filters.propertyStatus : status,
     };
     setFilters(nextFilters);
     setAppliedFilters(nextFilters);

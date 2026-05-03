@@ -29,6 +29,10 @@ export interface ICreateInquiryRequest {
   property: string;
 }
 
+export interface ISellerRequestMeetingRequest {
+  id: string;
+}
+
 export interface IFilterPropertiesRequest {
   location?: string;
   property_type?: string;
@@ -75,6 +79,7 @@ export type ICreateInquiryResponse = ICreatePropertyResponse;
 export type IGetMyInquiriesQueryResponse = IGetMyInquiriesResponse;
 export type IGetSellerReceivedInquiriesQueryResponse = IGetSellerReceivedInquiriesResponse;
 export type IHandleAdminLeadResponse = ICreatePropertyResponse;
+export type ISellerRequestMeetingResponse = ICreatePropertyResponse;
 export type IFilterPropertiesResponse = unknown;
 export type IPropertyViewResponse = unknown;
 
@@ -109,6 +114,7 @@ const propertyApi = baseApi.injectEndpoints({
         body: appendFormData(body),
       }),
       transformResponse: (response: ICreatePropertyResponse) => response,
+      invalidatesTags: ["Property"],
     }),
 
     viewProperty: builder.query<IViewPropertyResponse, void>({
@@ -117,6 +123,7 @@ const propertyApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       transformResponse: (response: IViewPropertyResponse) => response,
+      providesTags: ["Property"],
     }),
 
     propertyView: builder.query<IPropertyViewResponse, void>({
@@ -125,6 +132,7 @@ const propertyApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       transformResponse: (response: IPropertyViewResponse) => response,
+      providesTags: ["Property"],
     }),
 
     updateProperty: builder.mutation<IUpdatePropertyResponse, IUpdatePropertyRequest>({
@@ -134,6 +142,7 @@ const propertyApi = baseApi.injectEndpoints({
         body: appendFormData(body),
       }),
       transformResponse: (response: IUpdatePropertyResponse) => response,
+      invalidatesTags: ["Property"],
     }),
 
     deleteProperty: builder.mutation<IDeletePropertyResponse, string>({
@@ -142,6 +151,7 @@ const propertyApi = baseApi.injectEndpoints({
         method: "DELETE",
       }),
       transformResponse: (response: IDeletePropertyResponse) => response,
+      invalidatesTags: ["Property"],
     }),
 
     createInquiry: builder.mutation<ICreateInquiryResponse, ICreateInquiryRequest>({
@@ -151,6 +161,7 @@ const propertyApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: ICreateInquiryResponse) => response,
+      invalidatesTags: ["Inquiry"],
     }),
 
     getMyInquiries: builder.query<IGetMyInquiriesQueryResponse, void>({
@@ -159,6 +170,7 @@ const propertyApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       transformResponse: (response: IGetMyInquiriesQueryResponse) => response,
+      providesTags: ["Inquiry"],
     }),
 
     getSellerReceivedInquiries: builder.query<IGetSellerReceivedInquiriesQueryResponse, void>({
@@ -167,6 +179,17 @@ const propertyApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       transformResponse: (response: IGetSellerReceivedInquiriesQueryResponse) => response,
+      providesTags: ["Inquiry"],
+    }),
+
+    sellerRequestMeeting: builder.mutation<ISellerRequestMeetingResponse, ISellerRequestMeetingRequest>({
+      query: (body: ISellerRequestMeetingRequest) => ({
+        url: "/user/v1/property/inquiry/seller_request_meeting/",
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (response: ISellerRequestMeetingResponse) => response,
+      invalidatesTags: ["Inquiry"],
     }),
 
     filterProperties: builder.query<IFilterPropertiesResponse, IFilterPropertiesRequest>({
@@ -176,6 +199,7 @@ const propertyApi = baseApi.injectEndpoints({
         params,
       }),
       transformResponse: (response: IFilterPropertiesResponse) => response,
+      providesTags: ["Property"],
     }),
 
     handleBuyerOperatorLead: builder.mutation<IHandleAdminLeadResponse, IHandleAdminLeadRequest>({
@@ -185,6 +209,7 @@ const propertyApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: IHandleAdminLeadResponse) => response,
+      invalidatesTags: ["Inquiry"],
     }),
 
     handleLesseeOperatorLead: builder.mutation<IHandleAdminLeadResponse, IHandleAdminLeadRequest>({
@@ -194,6 +219,7 @@ const propertyApi = baseApi.injectEndpoints({
         body,
       }),
       transformResponse: (response: IHandleAdminLeadResponse) => response,
+      invalidatesTags: ["Inquiry"],
     }),
   }),
 });
@@ -207,6 +233,7 @@ export const {
   useCreateInquiryMutation,
   useGetMyInquiriesQuery,
   useGetSellerReceivedInquiriesQuery,
+  useSellerRequestMeetingMutation,
   useLazyFilterPropertiesQuery,
   useHandleBuyerOperatorLeadMutation,
   useHandleLesseeOperatorLeadMutation,

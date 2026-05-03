@@ -47,6 +47,7 @@ type InquiryCard = {
   purpose: string;
   status: string;
   contactState: string;
+  meetLink: string | null;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -116,6 +117,7 @@ function normalizeInquiries(items: IMyInquiryItem[]): InquiryCard[] {
       contactState:
         firstText(record.contact_state, record.contact_visibility, record.contactStatus) ??
         'Contact hidden',
+      meetLink: firstText(record.meet_link, record.meetLink, record.google_meet_link),
     };
   });
 }
@@ -133,14 +135,18 @@ export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [session, setSession] = useState(() => getDashboardSession());
-  const [active, setActive] = useState<BuyerNav>('dashboard');
+  const [active, setActive] = useState<BuyerNav>('requests');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { data, isLoading, isError, error } = useGetMyInquiriesQuery();
   const submittedRequests = useMemo(() => normalizeInquiries(extractInquiries(data)), [data]);
+  const topMeetLink = useMemo(
+    () => submittedRequests.find((request) => Boolean(request.meetLink))?.meetLink ?? null,
+    [submittedRequests]
+  );
 
   useEffect(() => {
     if (!session || session.role !== role) {
-      router.replace('/dashboard');
+      router.replace('/');
     }
   }, [role, router, session]);
 
@@ -204,18 +210,6 @@ export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps
 
         <nav className="flex-1 py-3 space-y-0.5 px-2">
           <button
-            onClick={() => setActive('dashboard')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              active === 'dashboard'
-                ? 'bg-white text-black'
-                : 'text-white/60 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4 shrink-0" />
-            {sidebarOpen && <span className="truncate">Dashboard</span>}
-          </button>
-
-          <button
             onClick={() => setActive('requests')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
               active === 'requests'
@@ -259,52 +253,7 @@ export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps
             </div>
           </div>
 
-          {active === 'dashboard' && (
-            <section className="rounded-3xl border border-black/10 bg-white p-5 sm:p-6">
-              <h2 className="text-2xl font-black text-black leading-tight">{roleTitle} / Lease User View</h2>
-              <p className="mt-1 text-sm text-[#5b6b84]">
-                {role === 'buyer'
-                  ? 'View active properties and submit buyer requests through controlled workflow.'
-                  : 'View active properties and submit lessee requests through controlled workflow.'}
-              </p>
-
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-black/10 bg-[#fafafa] px-3 h-11">
-                <Search className="h-4 w-4 text-gray-400" />
-                <input
-                  placeholder="Search city, asset type, or title"
-                  className="w-full bg-transparent text-sm text-black outline-none placeholder:text-gray-400"
-                />
-              </div>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                {ACTIVE_PROPERTIES.map((property) => (
-                  <article key={property.id} className="rounded-2xl border border-black/10 bg-white p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-2xl font-black leading-tight text-black">{property.title}</h3>
-                        <p className="mt-1 text-sm text-[#5b6b84]">
-                          {property.location} • {property.category} • {property.model}
-                        </p>
-                      </div>
-                      <Badge status={property.status} />
-                    </div>
-
-                    <p className="mt-3 text-sm font-semibold text-black">Demand: {property.demand}</p>
-                    <p className="mt-3 rounded-xl bg-[#f2f4f8] px-3 py-2 text-sm text-[#5b6b84]">{property.note}</p>
-
-                    <div className="mt-3 flex gap-2">
-                      <button className="h-10 rounded-xl bg-black px-4 text-xs font-bold text-white transition hover:bg-gray-800">
-                        Raise Interest
-                      </button>
-                      <button className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50">
-                        Request Meeting
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
+          {/* Dashboard view removed — only 'My Requests' is supported for buyer/lessee */}
 
           {active === 'requests' && (
             <section className="rounded-3xl border border-black/10 bg-white p-5 sm:p-6">
@@ -312,6 +261,20 @@ export default function BuyerLesseeDashboard({ role }: BuyerLesseeDashboardProps
               <p className="mt-1 text-sm text-[#5b6b84]">
                 Track inquiry status after raising interest from website property pages.
               </p>
+
+              {topMeetLink ? (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-bold text-emerald-800">Join this meet to connect the seller </p>
+                  <a
+                    href={topMeetLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 block text-sm font-semibold text-emerald-700 underline break-all"
+                  >
+                    {topMeetLink}
+                  </a>
+                </div>
+              ) : null}
 
               <div className="mt-4 space-y-3">
                 {isLoading ? (

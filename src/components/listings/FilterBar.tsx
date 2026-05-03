@@ -5,11 +5,12 @@ import { SlidersHorizontal, Search } from "lucide-react";
 import { PropertyStatus } from "@/src/types/property";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+export type ListingFilterType = "All" | PropertyStatus;
 
 export interface FilterState {
   location: string;
   area: string;
-  listingType: PropertyStatus;
+  listingType: ListingFilterType;
   propertyType: string;
   propertyStatus: PropertyStatus;
 }
@@ -17,7 +18,7 @@ export interface FilterState {
 export const defaultFilters: FilterState = {
   location: "",
   area: "",
-  listingType: "Pre-Leased",
+  listingType: "All",
   propertyType: "",
   propertyStatus: "Pre-Leased",
 };
@@ -33,7 +34,7 @@ const PROPERTY_TYPE_OPTIONS = [
   "Holiday Home",
   "Commercial",
 ];
-const STATUS_OPTIONS: PropertyStatus[] = ["Pre-Leased", "Lease-Ready", "Sale"];
+const STATUS_OPTIONS: ListingFilterType[] = ["All", "Pre-Leased", "Lease-Ready", "Sale"];
 
 // ─── Shared input class ───────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ interface FilterBarProps {
   onChange: (filters: FilterState) => void;
   onApply: (filters: FilterState) => void;
   onReset: () => void;
-  onStatusChange: (status: PropertyStatus) => void;
+  onStatusChange: (status: ListingFilterType) => void;
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({
@@ -106,9 +107,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
       </div>
 
       <div className="mt-4 rounded-xl bg-slate-100 p-1.5">
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-4 gap-1.5">
           {STATUS_OPTIONS.map((status) => {
-            const active = filters.propertyStatus === status;
+            const active = filters.listingType === status;
 
             return (
               <button
@@ -133,7 +134,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
       {/* ── Advanced filters (collapsible) ── */}
       {showAdvanced && (
         <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Property size (area)</label>
               <input
@@ -157,10 +158,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Listing type</label>
-              <input className={inputCls} value={filters.listingType} readOnly />
-            </div>
           </div>
 
           <div className="flex justify-end">

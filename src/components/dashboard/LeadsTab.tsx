@@ -6,18 +6,17 @@ import { CalendarCheck2, RefreshCw, Users } from 'lucide-react';
 import StatCard from './StatCard';
 import Badge from './Badge';
 import {
-  IAdminLeadAction,
   IGetSellerReceivedInquiriesQueryResponse,
   IMyInquiryItem,
   useGetSellerReceivedInquiriesQuery,
-  useHandleBuyerOperatorLeadMutation,
-  useHandleLesseeOperatorLeadMutation,
+  useSellerRequestMeetingMutation,
 } from '@/src/redux/features/property/propertyApi';
 
 type InquiryCard = {
   id: string;
   property: string;
   leadType: string;
+  customerName: string;
   budget: string;
   purpose: string;
   timeline: string;
@@ -26,6 +25,7 @@ type InquiryCard = {
   summary: string;
   status: string;
   contactState: string;
+  meetLink: string | null;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -91,10 +91,14 @@ function normalizeInquiries(items: IMyInquiryItem[]): InquiryCard[] {
   return items.map((item, index) => {
     const record = asRecord(item) ?? {};
     const propertyRecord = asRecord(record.property);
+    const propertyDetailsRecord = asRecord(record.property_details);
+    const buyerDetailsRecord = asRecord(record.buyer_details);
+    const sellerDetailsRecord = asRecord(record.seller_details);
     const status = firstText(record.status, record.inquiry_status, record.state) ?? 'Submitted';
     const contactState =
       firstText(record.contact_state, record.contact_visibility, record.contactStatus) ??
       'Contact hidden';
+    const meetLink = firstText(record.meet_link, record.meetLink, record.google_meet_link);
 
     return {
       id:
@@ -105,20 +109,38 @@ function normalizeInquiries(items: IMyInquiryItem[]): InquiryCard[] {
           record.property_title,
           record.property_name,
           record.title,
+          propertyDetailsRecord?.property_name,
           propertyRecord?.title,
           propertyRecord?.property_name,
           propertyRecord?.name
         ) ?? `Inquiry #${index + 1}`,
-      leadType: firstText(record.lead_type, record.role, record.inquiry_type, record.user_role) ?? 'N/A',
+      leadType:
+        firstText(
+          record.lead_type,
+          record.role,
+          record.inquiry_type,
+          record.user_role,
+          buyerDetailsRecord?.role
+        ) ?? 'N/A',
+      customerName:
+        firstText(
+          record.buyer_name,
+          record.customer_name,
+          record.user_name,
+          buyerDetailsRecord?.user_name,
+          sellerDetailsRecord?.user_name
+        ) ?? 'N/A',
       budget: firstText(record.budget, record.offer_amount, record.expected_price_rent) ?? 'Not specified',
       purpose: firstText(record.purpose, record.intent, record.category) ?? 'Not specified',
       timeline:
         firstText(
+          record.created_at,
+          record.createdAt,
           record.timeline,
           record.expected_timeline,
           record.expected_closure_timeline,
-          record.created_at,
-          record.createdAt
+          record.updated_at,
+          record.updatedAt
         ) ?? 'Not specified',
       hasMeetingRequest: parseBoolean(
         record.has_meeting_request ?? record.meeting_requested ?? record.is_meeting_requested
@@ -127,6 +149,7 @@ function normalizeInquiries(items: IMyInquiryItem[]): InquiryCard[] {
       summary: firstText(record.summary, record.message, record.note, record.description) ?? 'No summary available.',
       status,
       contactState,
+      meetLink,
     };
   });
 }
@@ -140,73 +163,61 @@ function getErrorMessage(error: unknown): string {
   );
 }
 
-function getLeadChannel(leadType: string): 'buyer' | 'lessee' {
-  const normalized = leadType.toLowerCase();
-  if (normalized.includes('lessee') || normalized.includes('operator')) {
-    return 'lessee';
-  }
-  return 'buyer';
+function isMeetingScheduled(lead: InquiryCard): boolean {
+  return lead.status.trim().toLowerCase() === 'meeting scheduled';
 }
 
 export default function LeadsTab() {
   const { data, isLoading, isError, error, refetch } = useGetSellerReceivedInquiriesQuery();
-  const [handleBuyerLead, { isLoading: isBuyerActionLoading }] = useHandleBuyerOperatorLeadMutation();
-  const [handleLesseeLead, { isLoading: isLesseeActionLoading }] = useHandleLesseeOperatorLeadMutation();
-  const [activeActionId, setActiveActionId] = useState<string | null>(null);
+  const [sellerRequestMeeting, { isLoading: isMeetingRequestLoading }] = useSellerRequestMeetingMutation();
+  const [activeMeetingRequestId, setActiveMeetingRequestId] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const inquiries = useMemo(() => normalizeInquiries(extractInquiries(data)), [data]);
   const requestCenterItems = useMemo(
-    () => inquiries.filter((item) => item.connectRequested || item.hasMeetingRequest),
+    () =>
+      inquiries.filter(
+        (item) =>
+          item.connectRequested ||
+          item.hasMeetingRequest ||
+          isMeetingScheduled(item) ||
+          Boolean(item.meetLink)
+      ),
     [inquiries]
   );
   const sharedContactsCount = useMemo(
     () => inquiries.filter((item) => item.contactState.toLowerCase() !== 'contact hidden').length,
     [inquiries]
   );
-  const isAnyActionLoading = isBuyerActionLoading || isLesseeActionLoading;
+  const topMeetLink = useMemo(
+    () => requestCenterItems.find((item) => Boolean(item.meetLink))?.meetLink ?? null,
+    [requestCenterItems]
+  );
 
-  async function handleLeadAction(lead: InquiryCard, action: IAdminLeadAction) {
+  async function handleMeetingRequest(lead: InquiryCard) {
     const leadId = lead.id.trim();
     if (!leadId) {
-      setActionError('Lead id is missing. Unable to process this action.');
+      setActionError('Lead id is missing. Unable to request meeting.');
       return;
-    }
-
-    const payload: { id: string; action: IAdminLeadAction; meet_link?: string } = {
-      id: leadId,
-      action,
-    };
-
-    if (action === 'send_link') {
-      const link = window.prompt('Enter Google Meet link');
-      if (!link || !link.trim()) {
-        setActionError('Google Meet link is required to schedule a meeting.');
-        return;
-      }
-      payload.meet_link = link.trim();
     }
 
     setActionError(null);
     setActionFeedback(null);
-    setActiveActionId(leadId);
+    setActiveMeetingRequestId(leadId);
 
     try {
-      if (getLeadChannel(lead.leadType) === 'lessee') {
-        const response = await handleLesseeLead(payload).unwrap();
-        setActionFeedback(response.message ?? 'Lessee lead action completed successfully.');
-      } else {
-        const response = await handleBuyerLead(payload).unwrap();
-        setActionFeedback(response.message ?? 'Buyer lead action completed successfully.');
-      }
+      const response = await sellerRequestMeeting({ id: leadId }).unwrap();
+      setActionFeedback(response.message ?? 'Meeting request sent successfully.');
       await refetch();
     } catch (err) {
       setActionError(getErrorMessage(err));
     } finally {
-      setActiveActionId(null);
+      setActiveMeetingRequestId(null);
     }
   }
+
+  
 
   return (
     <div className="space-y-6">
@@ -238,6 +249,20 @@ export default function LeadsTab() {
           </div>
         </div>
 
+        {topMeetLink ? (
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="text-sm font-bold text-emerald-800">Join this meet</p>
+            <a
+              href={topMeetLink}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 block text-sm font-semibold text-emerald-700 underline break-all"
+            >
+              {topMeetLink}
+            </a>
+          </div>
+        ) : null}
+
         {isLoading ? (
           <div className="mt-5 rounded-2xl border border-dashed border-black/10 bg-[#fafafa] p-6 text-center text-sm text-gray-400">
             Loading inquiry requests...
@@ -258,8 +283,24 @@ export default function LeadsTab() {
                   <div>
                     <p className="text-lg font-black leading-tight text-black">{request.property}</p>
                     <p className="mt-1 text-sm text-[#5b6b84]">
-                      Type: {request.leadType} • Purpose: {request.purpose}
+                      Lead Type: {request.leadType} • Customer: {request.customerName}
                     </p>
+                    <p className="mt-1 text-sm text-[#5b6b84]">
+                      Interest Time: {request.timeline}
+                    </p>
+                    {isMeetingScheduled(request) && request.meetLink ? (
+                      <p className="mt-2 text-sm text-[#0b6bcb]">
+                        Meet link:{' '}
+                        <a
+                          href={request.meetLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold underline break-all"
+                        >
+                          {request.meetLink}
+                        </a>
+                      </p>
+                    ) : null}
                   </div>
                   <Badge status={request.status} />
                 </div>
@@ -315,10 +356,10 @@ export default function LeadsTab() {
                 <div>
                   <p className="text-2xl font-black leading-tight text-black">{lead.property}</p>
                   <p className="mt-2 text-sm text-[#5b6b84]">
-                    Lead type: {lead.leadType} • Budget: {lead.budget} • Purpose: {lead.purpose}
+                    Lead type: {lead.leadType} • Customer: {lead.customerName}
                   </p>
                   <p className="text-sm text-[#5b6b84] mt-1">
-                    Timeline: {lead.timeline} • Meeting request: {lead.hasMeetingRequest ? 'Yes' : 'No'}
+                    Interest time: {lead.timeline} • Meeting request: {lead.hasMeetingRequest ? 'Yes' : 'No'}
                   </p>
                   <p className="mt-2 text-sm text-[#5b6b84]">Summary: {lead.summary}</p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -332,26 +373,14 @@ export default function LeadsTab() {
 
                 <div className="flex items-center gap-2 md:pt-1">
                   <button
-                    disabled={isAnyActionLoading}
-                    onClick={() => handleLeadAction(lead, 'approve')}
-                    className="h-10 rounded-xl bg-black px-4 text-xs font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isMeetingRequestLoading}
+                    onClick={() => handleMeetingRequest(lead)}
+                    className="h-10 rounded-xl bg-[#0b6bcb] px-4 text-xs font-bold text-white transition hover:bg-[#0959a8] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isAnyActionLoading && activeActionId === lead.id ? 'Processing...' : 'Approve'}
+                    {isMeetingRequestLoading && activeMeetingRequestId === lead.id ? 'Requesting...' : 'Meet Request'}
                   </button>
-                  <button
-                    disabled={isAnyActionLoading}
-                    onClick={() => handleLeadAction(lead, 'disapprove')}
-                    className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Disapprove
-                  </button>
-                  <button
-                    disabled={isAnyActionLoading}
-                    onClick={() => handleLeadAction(lead, 'send_link')}
-                    className="h-10 rounded-xl border border-black/10 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Send Meet Link
-                  </button>
+                 
+                 
                 </div>
               </div>
             </div>

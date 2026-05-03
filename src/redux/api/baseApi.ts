@@ -3,6 +3,10 @@ import type { RootState } from "../store";
 
 export const baseApi = createApi({
   reducerPath: "baseApi",
+  tagTypes: ["Property", "Inquiry"],
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+  refetchOnMountOrArgChange: true,
   baseQuery: fetchBaseQuery({
     baseUrl: "https://jlsxgq9c-8000.inc1.devtunnels.ms",
     prepareHeaders: (headers, { getState }) => {
