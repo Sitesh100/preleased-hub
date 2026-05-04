@@ -146,13 +146,6 @@ export default function PropertyDetailPage({
                   {location}
                 </p>
               </div>
-
-              <div className="max-w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-md sm:px-5 sm:py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-200">
-                  Property ID
-                </p>
-                <p className="mt-1 break-all text-lg font-bold text-white sm:text-xl">{property.id}</p>
-              </div>
             </div>
           </div>
         </div>
@@ -188,16 +181,6 @@ export default function PropertyDetailPage({
             />
           )}
           <DetailMetric
-            label="Occupancy"
-            value={property.occupancyStatus}
-            icon={<ShieldCheck size={18} />}
-          />
-          <DetailMetric
-            label="Lease Term"
-            value={property.leaseTerm}
-            icon={<CalendarDays size={18} />}
-          />
-          <DetailMetric
             label="Last Updated"
             value={property.listedDate}
             icon={<CalendarDays size={18} />}
@@ -206,12 +189,10 @@ export default function PropertyDetailPage({
 
         <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[1.45fr_0.85fr]">
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+            <p className="text-md font-semibold uppercase tracking-[0.2em] text-blue-700">
               Property Overview
             </p>
-            <h2 className="mt-3 text-xl font-bold text-slate-900 sm:text-2xl">
-              Built for clear backend mapping later
-            </h2>
+            
             <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
               {property.description}
             </p>
