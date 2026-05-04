@@ -35,7 +35,7 @@ export interface ISellerRequestMeetingRequest {
 
 export interface IFilterPropertiesRequest {
   location?: string;
-  property_type?: string;
+  property_type?: string | number;
   listing_type?: string | number;
   area?: string | number;
 }

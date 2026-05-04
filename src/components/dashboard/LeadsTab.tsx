@@ -371,17 +371,17 @@ export default function LeadsTab() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 md:pt-1">
-                  <button
-                    disabled={isMeetingRequestLoading}
-                    onClick={() => handleMeetingRequest(lead)}
-                    className="h-10 rounded-xl bg-[#0b6bcb] px-4 text-xs font-bold text-white transition hover:bg-[#0959a8] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isMeetingRequestLoading && activeMeetingRequestId === lead.id ? 'Requesting...' : 'Meet Request'}
-                  </button>
-                 
-                 
-                </div>
+                {!isMeetingScheduled(lead) && (
+                  <div className="flex items-center gap-2 md:pt-1">
+                    <button
+                      disabled={isMeetingRequestLoading}
+                      onClick={() => handleMeetingRequest(lead)}
+                      className="h-10 rounded-xl bg-[#0b6bcb] px-4 text-xs font-bold text-white transition hover:bg-[#0959a8] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isMeetingRequestLoading && activeMeetingRequestId === lead.id ? 'Requesting...' : 'Meet Request'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             ))

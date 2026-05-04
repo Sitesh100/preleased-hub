@@ -26,13 +26,12 @@ export const defaultFilters: FilterState = {
 // ─── Options ─────────────────────────────────────────────────────────────────
 
 const PROPERTY_TYPE_OPTIONS = [
-  "",
-  "Hotel",
-  "Resort",
-  "Villa",
-  "Service Apartment",
-  "Holiday Home",
-  "Commercial",
+  { value: "", label: "Any type" },
+  { value: "1", label: "Hotel" },
+  { value: "2", label: "Resort" },
+  { value: "3", label: "Villa" },
+  { value: "4", label: "Service Apartment" },
+  { value: "5", label: "Holiday Home" },
 ];
 const STATUS_OPTIONS: ListingFilterType[] = ["All", "Pre-Leased", "Lease-Ready", "Sale"];
 
@@ -150,9 +149,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Property type</label>
               <select className={selectCls} value={filters.propertyType} onChange={(e) => set("propertyType", e.target.value)}>
-                {PROPERTY_TYPE_OPTIONS.map((o) => (
-                  <option key={o} value={o}>
-                    {o || "Any type"}
+                {PROPERTY_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value || "any"} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>

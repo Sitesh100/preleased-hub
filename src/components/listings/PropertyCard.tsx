@@ -39,13 +39,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
       {/* ── Image ── */}
       <div className="relative h-48 bg-slate-100 flex-shrink-0 overflow-hidden">
-        <span className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-bold px-2 py-0.5 rounded-md tracking-wide">
-          {id}
-        </span>
+        
         {/* Status Badge */}
-        <span className="absolute top-3 left-16 z-10 bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-0.5 rounded-md tracking-wide">
-          {displayStatus}
-        </span>
+        
         <button
           className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm text-slate-500 hover:text-blue-600 hover:bg-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200"
           onClick={() => onShare?.(property)}

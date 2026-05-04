@@ -330,50 +330,49 @@ export default function PropertyListingForm({
           </div>
         </Section>
 
-        {/* ── Listing Type ── */}
         <Section title="Listing Type">
-          <div className="mb-4 grid grid-cols-3 gap-3">
-            {LISTING_TYPES.map((type) => {
-              const active = listingKey === type.key;
-              return (
-                <button
-                  key={type.key}
-                  type="button"
-                  onClick={() => setListingKey(type.key)}
-                  className={`flex flex-col gap-1 rounded-[12px] border-[1.5px] px-4 py-3.5 text-left transition-colors ${
-                    active ? "border-[#4f46e5] bg-[#eef2ff]" : "border-[#e5e7eb] bg-white hover:border-[#a5b4fc]"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] ${active ? "border-[#4f46e5]" : "border-[#d1d5db]"}`}>
-                      {active && <span className="h-2 w-2 rounded-full bg-[#4f46e5]" />}
-                    </span>
-                    <span className="text-[15px] font-semibold text-[#111827]">{type.label}</span>
-                  </div>
-                  <span className="pl-6 text-[13px] leading-tight text-[#6b7280]">{type.desc}</span>
-                </button>
-              );
-            })}
+  <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+    {LISTING_TYPES.map((type) => {
+      const active = listingKey === type.key;
+      return (
+        <button
+          key={type.key}
+          type="button"
+          onClick={() => setListingKey(type.key)}
+          className={`flex flex-row items-center gap-3 rounded-[12px] border-[1.5px] px-4 py-3.5 text-left transition-colors sm:flex-col sm:gap-1 ${
+            active ? "border-[#4f46e5] bg-[#eef2ff]" : "border-[#e5e7eb] bg-white hover:border-[#a5b4fc]"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] ${active ? "border-[#4f46e5]" : "border-[#d1d5db]"}`}>
+              {active && <span className="h-2 w-2 rounded-full bg-[#4f46e5]" />}
+            </span>
+            <span className="text-[15px] font-semibold text-[#111827]">{type.label}</span>
           </div>
+          <span className="text-[13px] leading-tight text-[#6b7280] sm:pl-6">{type.desc}</span>
+        </button>
+      );
+    })}
+  </div>
 
-          {listingKey === "sell" && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <input className={inputClass} placeholder="Selling Price" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} />
-            </div>
-          )}
-          {listingKey === "lease" && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <input className={inputClass} placeholder="Expected Monthly Rent" value={expectedMonthlyRent} onChange={(e) => setExpectedMonthlyRent(e.target.value)} />
-              <input className={inputClass} placeholder="Security Deposit" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
-            </div>
-          )}
-          {listingKey === "preleased" && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <input className={inputClass} placeholder="Annual Rental Income" value={annualRentalIncome} onChange={(e) => setAnnualRentalIncome(e.target.value)} />
-              <input className={inputClass} placeholder="Lock-in Period" value={lockInPeriod} onChange={(e) => setLockInPeriod(e.target.value)} />
-            </div>
-          )}
-        </Section>
+  {listingKey === "sell" && (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <input className={inputClass} placeholder="Selling Price" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} />
+    </div>
+  )}
+  {listingKey === "lease" && (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <input className={inputClass} placeholder="Expected Monthly Rent" value={expectedMonthlyRent} onChange={(e) => setExpectedMonthlyRent(e.target.value)} />
+      <input className={inputClass} placeholder="Security Deposit" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
+    </div>
+  )}
+  {listingKey === "preleased" && (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <input className={inputClass} placeholder="Annual Rental Income" value={annualRentalIncome} onChange={(e) => setAnnualRentalIncome(e.target.value)} />
+      <input className={inputClass} placeholder="Lock-in Period" value={lockInPeriod} onChange={(e) => setLockInPeriod(e.target.value)} />
+    </div>
+  )}
+</Section>
 
         {/* ── Owner Details ── */}
         <Section title="Owner Details">

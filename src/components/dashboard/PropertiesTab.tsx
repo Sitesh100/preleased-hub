@@ -21,6 +21,11 @@ interface ApiPropertyItem {
   full_address?: string;
   expected_price_rent?: string | number;
   rooms_keys?: string | number;
+  rooms?: string | number;
+  built_up_area?: string | number;
+  listing_type?: string | number;
+  selling_price?: string | number;
+  expected_monthly_rent?: string | number;
   current_occupancy_percent?: string | number;
   current_monthly_income?: string | number;
   intent?: string | number;
@@ -64,7 +69,12 @@ function extractApiPropertyList(payload: unknown): ApiPropertyItem[] {
         typeof record.expected_price_rent === 'number' || typeof record.expected_price_rent === 'string'
           ? record.expected_price_rent
           : '',
+      selling_price: typeof record.selling_price === 'number' || typeof record.selling_price === 'string' ? record.selling_price : undefined,
+      expected_monthly_rent: typeof record.expected_monthly_rent === 'number' || typeof record.expected_monthly_rent === 'string' ? record.expected_monthly_rent : undefined,
       rooms_keys: typeof record.rooms_keys === 'number' || typeof record.rooms_keys === 'string' ? record.rooms_keys : '',
+      rooms: typeof record.rooms === 'number' || typeof record.rooms === 'string' ? record.rooms : undefined,
+      built_up_area: typeof record.built_up_area === 'number' || typeof record.built_up_area === 'string' ? record.built_up_area : undefined,
+      listing_type: typeof record.listing_type === 'number' || typeof record.listing_type === 'string' ? record.listing_type : undefined,
       current_occupancy_percent:
         typeof record.current_occupancy_percent === 'number' ||
         typeof record.current_occupancy_percent === 'string'
@@ -90,6 +100,38 @@ function formatPrice(value: string | number | undefined) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue) || numericValue <= 0) return 'N/A';
   return `₹${numericValue.toLocaleString('en-IN')}`;
+}
+
+function mapListingType(value: string | number | undefined) {
+  const normalized = String(value ?? '').toLowerCase();
+  if (normalized === '1' || normalized === 'sell') return 'Sell';
+  if (normalized === '2' || normalized === 'lease') return 'Lease';
+  if (normalized === '3' || normalized === 'preleased' || normalized === 'pre-leased') return 'Pre-Leased';
+  return 'Sell';
+}
+
+function formatPriceForListing(item: ApiPropertyItem) {
+  const listing = item.listing_type ?? item.intent;
+  const listingKey = Number(listing || 0);
+
+  if (listingKey === 1) {
+    // Sell
+    if (item.selling_price !== undefined && String(item.selling_price).trim() !== '') return formatPrice(item.selling_price);
+    if (item.expected_price_rent !== undefined && String(item.expected_price_rent).trim() !== '') return formatPrice(item.expected_price_rent);
+    return 'N/A';
+  }
+
+  if (listingKey === 2) {
+    // Lease / Rent — show monthly rent
+    if (item.expected_monthly_rent !== undefined && String(item.expected_monthly_rent).trim() !== '') return `${formatPrice(item.expected_monthly_rent)}/mo`;
+    if (item.current_monthly_income !== undefined && String(item.current_monthly_income).trim() !== '') return `${formatPrice(item.current_monthly_income)}/mo`;
+    return 'N/A';
+  }
+
+  // Pre-leased or other: try annual rental income then monthly
+  if (item.current_monthly_income !== undefined && String(item.current_monthly_income).trim() !== '') return `${formatPrice(item.current_monthly_income)}/mo`;
+  if (item.expected_price_rent !== undefined && String(item.expected_price_rent).trim() !== '') return formatPrice(item.expected_price_rent);
+  return 'N/A';
 }
 
 function mapPropertyType(value: string | number | undefined) {
@@ -140,17 +182,28 @@ export default function PropertiesTab() {
 
   const rows = useMemo<DashboardPropertyRow[]>(
     () =>
-      properties.map((property) => ({
-        id: property.id,
-        name: property.property_name?.trim() || 'Untitled Property',
-        location: `${property.city || 'Unknown City'}${property.full_address ? `, ${property.full_address}` : ''}`,
-        price: formatPrice(property.expected_price_rent),
-        status: mapStatus(property),
-        type: mapPropertyType(property.property_type),
-        area: property.rooms_keys ? `${property.rooms_keys} Keys` : 'N/A',
-        interested: 0,
-        raw: property,
-      })),
+      properties.map((property) => {
+        const listingLabel = mapListingType(property.listing_type ?? property.intent);
+        const areaLabel = property.built_up_area && String(property.built_up_area).trim() !== ''
+          ? `${String(property.built_up_area)} sq ft`
+          : property.rooms !== undefined && String(property.rooms).trim() !== ''
+          ? `${String(property.rooms)} rooms`
+          : property.rooms_keys
+          ? `${property.rooms_keys} Keys`
+          : 'N/A';
+
+        return {
+          id: property.id,
+          name: property.property_name?.trim() || 'Untitled Property',
+          location: `${property.city || 'Unknown City'}${property.full_address ? `, ${property.full_address}` : ''}`,
+          price: formatPriceForListing(property),
+          status: mapStatus(property),
+          type: listingLabel,
+          area: areaLabel,
+          interested: 0,
+          raw: property,
+        };
+      }),
     [properties]
   );
 
@@ -236,11 +289,11 @@ export default function PropertiesTab() {
             <thead>
               <tr className="border-b border-black/10 bg-[#fafafa]">
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Property</th>
-                <th className="hidden px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">Type</th>
+                <th className="hidden px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">Listing Type</th>
                 <th className="hidden px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">Area</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Price</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                <th className="hidden px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">Interested</th>
+                <th className="hidden px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">Actions</th>
                 <th className="px-5 py-3.5" />
               </tr>
             </thead>
@@ -273,9 +326,7 @@ export default function PropertiesTab() {
                     <td className="px-5 py-4">
                       <Badge status={property.status} />
                     </td>
-                    <td className="hidden px-5 py-4 text-xs text-gray-500 lg:table-cell">
-                      {property.interested > 0 ? `${property.interested} lead visible` : 'No interested lead yet'}
-                    </td>
+                    
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <button
