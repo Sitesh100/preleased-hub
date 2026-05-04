@@ -9,6 +9,11 @@ export type PropertyType =
 export type PropertySource = "listings";
 export type PropertyStatus = "Pre-Leased" | "Lease-Ready" | "Sale";
 
+export interface PropertyDocument {
+  id: string;
+  document_file: string;
+}
+
 export interface Property {
   id: string;
   slug: string;
@@ -33,6 +38,7 @@ export interface Property {
   leaseTerm: string;
   occupancyStatus: string;
   listedDate: string;
+  documents?: PropertyDocument[];
 }
 
 export function formatCurrency(amount: number, currency = "$"): string {

@@ -21,7 +21,7 @@ import {
 import { toast } from "sonner";
 import AuthPopup from "@/src/components/auth/AuthPopup";
 import { useCreateInquiryMutation } from "@/src/redux/features/property/propertyApi";
-import { formatCurrency, formatLocation, Property } from "@/src/types/property";
+import { formatCurrency, formatLocation, Property, PropertyDocument } from "@/src/types/property";
 
 interface PropertyDetailPageProps {
   property: Property;
@@ -87,6 +87,78 @@ export default function PropertyDetailPage({
   const location = formatLocation(property);
   const preLeased = isPreLeased(property.listingType);
 
+  // Prefer API-provided price/rent fields when present (handles snake_case)
+  const displayPrice = (() => {
+    const p = getFirstDefined(property as any, "selling_price", "propertyPrice");
+    if (p === null) return null;
+    const n = Number(p);
+    return isNaN(n) ? String(p) : formatCurrency(n, property.currency);
+  })();
+
+  const displayMonthly = (() => {
+    const m = getFirstDefined(property as any, "expected_monthly_rent", "monthlyRent");
+    if (m === null) return null;
+    const n = Number(m);
+    return isNaN(n) ? String(m) : formatCurrency(n, property.currency);
+  })();
+
+  function getFirstDefined(obj: any, ...keys: string[]) {
+    for (const k of keys) {
+      const v = obj?.[k];
+      if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+    }
+    return null;
+  }
+
+  function buildDetails(prop: any) {
+    const listingType = getFirstDefined(prop, "listingType", "listing_type");
+    const details: { label: string; value: ReactNode }[] = [];
+
+    // Common fields
+    const city = getFirstDefined(prop, "city", "cityName");
+    const location = getFirstDefined(prop, "location");
+    const builtUp = getFirstDefined(prop, "built_up_area", "areaInSqFt");
+    const rooms = getFirstDefined(prop, "rooms");
+    const owner = getFirstDefined(prop, "owner_company_name", "ownerCompanyName");
+    const phone = getFirstDefined(prop, "phone_number", "phone");
+    const email = getFirstDefined(prop, "email_address", "email");
+
+    if (city) details.push({ label: "City", value: city });
+    if (location) details.push({ label: "Location", value: location });
+    if (builtUp) details.push({ label: "Built-up Area", value: String(builtUp) });
+    if (rooms) details.push({ label: "Rooms", value: String(rooms) });
+    if (owner) details.push({ label: "Owner / Company", value: owner });
+    if (phone) details.push({ label: "Phone", value: phone });
+    if (email) details.push({ label: "Email", value: email });
+
+    // Listing-type specific
+    if (Number(listingType) === 1) {
+      const sellPrice = getFirstDefined(prop, "selling_price", "propertyPrice");
+      if (sellPrice) {
+        const num = Number(sellPrice);
+        details.push({ label: "Selling Price", value: isNaN(num) ? sellPrice : formatCurrency(num, prop.currency) });
+      }
+    }
+
+    if (Number(listingType) === 2) {
+      const monthly = getFirstDefined(prop, "expected_monthly_rent", "monthlyRent");
+      const security = getFirstDefined(prop, "security_deposit");
+      if (monthly) {
+        const num = Number(monthly);
+        details.push({ label: "Expected Monthly Rent", value: isNaN(num) ? monthly : formatCurrency(num, prop.currency) });
+      }
+      if (security) details.push({ label: "Security Deposit", value: String(security) });
+    }
+
+    if (Number(listingType) === 3) {
+      const annual = getFirstDefined(prop, "annual_rental_income");
+      const lock = getFirstDefined(prop, "lock_in_period");
+      if (annual) details.push({ label: "Annual Rental Income", value: String(annual) });
+      if (lock) details.push({ label: "Lock-in Period", value: String(lock) });
+    }
+
+    return details;
+  }
   async function handleSendInquiry() {
     try {
       const result = await createInquiry({ property: property.id }).unwrap();
@@ -163,13 +235,13 @@ export default function PropertyDetailPage({
           />
           <DetailMetric
             label="Property Price"
-            value={formatCurrency(property.propertyPrice, property.currency)}
+            value={displayPrice ?? "N/A"}
             icon={<CircleDollarSign size={18} />}
           />
           {preLeased && (
             <DetailMetric
               label="Monthly Rental"
-              value={formatCurrency(property.monthlyRent, property.currency)}
+              value={displayMonthly ?? "N/A"}
               icon={<Percent size={18} />}
             />
           )}
@@ -197,16 +269,57 @@ export default function PropertyDetailPage({
               {property.description}
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {property.highlights.map((highlight) => (
-                <div
-                  key={highlight}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium leading-6 text-slate-700"
-                >
-                  {highlight}
+            {property.highlights && property.highlights.length > 0 && (
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                {property.highlights.map((highlight: string) => (
+                  <div
+                    key={highlight}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium leading-6 text-slate-700"
+                  >
+                    {highlight}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Render API-driven details based on listing type, show only non-empty fields */}
+            {(() => {
+              const details = buildDetails(property as any);
+              if (!details || details.length === 0) return null;
+              return (
+                <div className="mt-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Property Details</p>
+                  <div className="mt-3 grid gap-3">
+                    {details.map((d) => (
+                      <div key={String(d.label)} className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                        <span className="text-slate-500">{d.label}</span>
+                        <span className="font-semibold text-slate-900">{d.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })()}
+
+              {/* Documents (show thumbnails or links) */}
+              {property.documents && property.documents.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Documents</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {property.documents!.map((doc: PropertyDocument) => (
+                      <a
+                        key={doc.id}
+                        href={doc.document_file}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block h-24 w-32 overflow-hidden rounded-md border border-slate-200 bg-white"
+                      >
+                        <img src={doc.document_file} alt={doc.id} className="h-full w-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
           </section>
 
           <aside className="space-y-6">
