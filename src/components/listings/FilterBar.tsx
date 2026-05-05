@@ -8,7 +8,7 @@ import { PropertyStatus } from "@/src/types/property";
 export type ListingFilterType = "All" | PropertyStatus;
 
 export interface FilterState {
-  location: string;
+  city: string;
   area: string;
   listingType: ListingFilterType;
   propertyType: string;
@@ -16,7 +16,7 @@ export interface FilterState {
 }
 
 export const defaultFilters: FilterState = {
-  location: "",
+  city: "",
   area: "",
   listingType: "All",
   propertyType: "",
@@ -76,9 +76,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
           <input
             type="text"
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:border-blue-500 transition-colors"
-            placeholder="Location"
-            value={filters.location}
-            onChange={(e) => set("location", e.target.value)}
+            placeholder="city"
+            value={filters.city}
+            onChange={(e) => set("city", e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && onApply(filters)}
           />
         </div>

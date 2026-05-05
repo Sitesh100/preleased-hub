@@ -170,7 +170,7 @@ export default function PropertyBrowser({
 
   function applyServerFilter(nextFilters: FilterState) {
     void triggerFilterProperties({
-      location: nextFilters.location || undefined,
+      location: nextFilters.city || undefined,
       property_type: nextFilters.propertyType || undefined,
       listing_type: listingTypeFromFilter(nextFilters.listingType),
       area: nextFilters.area || undefined,
