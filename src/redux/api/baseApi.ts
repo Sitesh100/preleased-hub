@@ -8,7 +8,7 @@ export const baseApi = createApi({
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: true,
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://jlsxgq9c-8000.inc1.devtunnels.ms",
+    baseUrl: "https://traveljoy12.pythonanywhere.com/",
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {
