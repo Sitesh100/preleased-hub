@@ -5,12 +5,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "jlsxgq9c-8000.inc1.devtunnels.ms",
+        hostname: "traveljoy12.pythonanywhere.com",
       },
       {
-        protocol: "http",
-        hostname: "187.77.191.12",
-        port: "8000",
+        protocol: "https",
+        hostname: "jlsxgq9c-8000.inc1.devtunnels.ms",
       },
     ],
   },
