@@ -51,7 +51,7 @@ function toImageUrl(value: unknown): string {
       const filePath = (first as { document_file?: unknown }).document_file;
       if (typeof filePath === "string" && filePath.trim()) {
         if (filePath.startsWith("http://") || filePath.startsWith("https://")) return filePath;
-        return `https://jlsxgq9c-8000.inc1.devtunnels.ms${filePath}`;
+        return `${process.env.NEXT_PUBLIC_MEDIA_BASE_URL || ""}${filePath}`;
       }
     }
   }
