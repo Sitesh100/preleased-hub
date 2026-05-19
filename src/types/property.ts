@@ -24,7 +24,9 @@ export interface Property {
   country: string;
   propertyType: PropertyType;
   areaInSqFt: number;
+  rooms?: number;
   propertyPrice: number;
+  expectedMonthlyRent?: number;
   monthlyRent: number;
   roi: number;
   imageUrl: string;

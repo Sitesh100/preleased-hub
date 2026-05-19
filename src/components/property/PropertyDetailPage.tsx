@@ -17,6 +17,10 @@ import {
   ShieldCheck,
   MessageCircle,
   Send,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Images,
 } from "lucide-react";
 import { toast } from "sonner";
 import AuthPopup from "@/src/components/auth/AuthPopup";
@@ -55,12 +59,115 @@ function isPreLeased(listingType: number): boolean {
   return listingType === 3;
 }
 
+function ImageLightbox({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: PropertyDocument[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [current, setCurrent] = useState(startIndex);
+
+  const prev = () => setCurrent((i) => (i - 1 + images.length) % images.length);
+  const next = () => setCurrent((i) => (i + 1) % images.length);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") prev();
+    if (e.key === "ArrowRight") next();
+    if (e.key === "Escape") onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    >
+      {/* backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+
+      {/* modal */}
+      <div className="relative z-10 mx-4 flex w-full max-w-4xl flex-col gap-4">
+        {/* close */}
+        <button
+          onClick={onClose}
+          className="absolute -top-12 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
+
+        {/* main image */}
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
+          <img
+            src={images[current].document_file}
+            alt={`Property image ${current + 1}`}
+            className="h-full w-full object-cover"
+          />
+
+          {/* left arrow */}
+          <button
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+            aria-label="Previous image"
+          >
+            <ChevronLeft size={22} />
+          </button>
+
+          {/* right arrow */}
+          <button
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+            aria-label="Next image"
+          >
+            <ChevronRight size={22} />
+          </button>
+
+          {/* counter */}
+          <div className="absolute bottom-3 right-3 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur-sm tabular-nums">
+            {current + 1} / {images.length}
+          </div>
+        </div>
+
+        {/* thumbnail strip */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {images.map((img, i) => (
+            <button
+              key={img.id}
+              onClick={() => setCurrent(i)}
+              className={[
+                "relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition",
+                i === current
+                  ? "border-white/80 opacity-100"
+                  : "border-white/20 opacity-50 hover:opacity-80",
+              ].join(" ")}
+            >
+              <img
+                src={img.document_file}
+                alt={`Thumbnail ${i + 1}`}
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PropertyDetailPage({
   property,
   backHref,
   backLabel,
 }: PropertyDetailPageProps) {
   const router = useRouter();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [createInquiry, { isLoading: isInquirySubmitting }] = useCreateInquiryMutation();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -205,22 +312,43 @@ export default function PropertyDetailPage({
             <div className="mb-4 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-800 backdrop-blur">
               Listing Property
             </div>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-200">
-                  {property.statusLabel}
-                </p>
-                <h1 className="mt-2 text-2xl font-bold text-white sm:text-5xl">
-                  {property.title}
-                </h1>
-                <p className="mt-3 flex items-start gap-2 text-sm text-slate-200 sm:text-lg">
-                  <MapPin size={18} />
-                  {location}
-                </p>
-              </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-200">
+                {property.statusLabel}
+              </p>
+              <h1 className="mt-2 text-2xl font-bold text-white sm:text-5xl">
+                {property.title}
+              </h1>
+              <p className="mt-3 flex items-start gap-2 text-sm text-slate-200 sm:text-lg">
+                <MapPin size={18} />
+                {location}
+              </p>
             </div>
           </div>
+
+          {/* See more images — bottom-right corner of the image */}
+          {property.documents && property.documents.length > 1 && (
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/30 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-black/50 sm:bottom-6 sm:right-6"
+            >
+              <Images size={15} />
+              See more images
+              <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-semibold tabular-nums">
+                {property.documents.length}
+              </span>
+            </button>
+          )}
         </div>
+
+        {/* Lightbox portal */}
+        {lightboxOpen && property.documents && property.documents.length > 0 && (
+          <ImageLightbox
+            images={property.documents}
+            startIndex={0}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
 
         <div className="grid gap-4 border-b border-slate-200 bg-white p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-4">
           <DetailMetric
@@ -233,9 +361,20 @@ export default function PropertyDetailPage({
             value={`${property.areaInSqFt.toLocaleString()} sq ft`}
             icon={<Maximize2 size={18} />}
           />
+          {property.rooms ? (
+            <DetailMetric
+              label="Total Rooms"
+              value={String(property.rooms)}
+              icon={<Building2 size={18} />}
+            />
+          ) : null}
           <DetailMetric
-            label="Property Price"
-            value={displayPrice ?? "N/A"}
+            label={displayPrice && displayPrice !== "₹0" ? "Property Price" : "Expected Monthly Rent"}
+            value={
+              displayPrice && displayPrice !== "₹0"
+                ? displayPrice
+                : (displayMonthly ?? "N/A")
+            }
             icon={<CircleDollarSign size={18} />}
           />
           {preLeased && (

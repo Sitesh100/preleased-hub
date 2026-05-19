@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
   motion,
+  AnimatePresence,
   useScroll,
   useTransform,
   useInView,
@@ -17,6 +18,11 @@ import {
 import { ShieldCheck, BadgeCheck, Clock, Users } from "lucide-react";
 
 import bannerImage from "@/src/assets/images/home.png";
+import jaipurImage from "@/src/assets/images/jaipur.jpg";
+import bannerWebp from "@/src/assets/images/banner.webp";
+import bestDealsImage from "@/src/assets/images/best_deals.png";
+import mumbaiImage from "@/src/assets/images/mumbai.webp";
+import goaHotelImage from "@/src/assets/images/goa hotel.webp";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -45,12 +51,56 @@ const CTA_LINKS = [
   { href: "/listings?intent=sell",      label: "Sell / Lease / Operate" },
 ];
 
-const STATS = [
-  ["Monthly Rent", "₹5L"],
-  ["Lock-in",      "9 years"],
-  ["Deposit",      "6 months"],
-  ["Escalation",   "15% / 3 yrs"],
+const SLIDES = [
+  {
+    image: bannerImage,
+    badge: "Live Deal",
+    badgeColor: "emerald" as const,
+    label: "Structured Asset",
+    title: "Running Hotel · Indore",
+   
+  },
+  {
+    image: jaipurImage,
+    badge: "New Listing",
+    badgeColor: "sky" as const,
+    label: "Boutique Property",
+    title: "Heritage Haveli · Jaipur",
+    
+  },
+  {
+    image: mumbaiImage,
+    badge: "Hot Deal",
+    badgeColor: "orange" as const,
+    label: "Commercial Asset",
+    title: "Business Hotel · Mumbai",
+  
+  },
+  {
+    image: bestDealsImage,
+    badge: "Best Deal",
+    badgeColor: "violet" as const,
+    label: "Serviced Apartment",
+    title: "Service Suites · Bangalore",
+   
+  },
+  {
+    image: goaHotelImage,
+    badge: "Premium",
+    badgeColor: "amber" as const,
+    label: "Resort Property",
+    title: "Boutique Resort · Goa",
+   
+  },
 ] as const;
+
+const BADGE_DOT_COLORS = {
+  emerald: "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]",
+  sky:     "bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]",
+  orange:  "bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.8)]",
+  violet:  "bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.8)]",
+  amber:   "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]",
+};
 
 // ── Animated counter ──────────────────────────────────────────────────────────
 function AnimatedCounter({
@@ -116,6 +166,16 @@ function useMouseParallax(strength = 20) {
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDirection(1);
+      setActiveSlide((prev) => (prev + 1) % SLIDES.length);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   // ── scroll-based parallax ──
   const { scrollYProgress } = useScroll({
@@ -321,7 +381,7 @@ export default function HeroSection() {
           >
             {[
               { val: 500, prefix: "",  suffix: "+",   label: "Verified assets" },
-              { val: 200, prefix: "₹", suffix: "Cr+", label: "Deals closed"    },
+              { val: 20, prefix: "₹", suffix: "Cr+", label: "Deals closed"    },
               { val: 12,  prefix: "",  suffix: "+",   label: "Cities"          },
             ].map(({ val, prefix, suffix, label }, i) => (
               <motion.div
@@ -355,7 +415,7 @@ export default function HeroSection() {
           style={{ y: rightY, x: mX2 }}
           className="relative will-change-transform"
         >
-          {/* decorative offset frame — floats at its own rate */}
+          {/* decorative offset frame */}
           <motion.div
             style={{
               x: useTransform(scrollYProgress, [0, 1], ["0%", "3%"]),
@@ -370,78 +430,121 @@ export default function HeroSection() {
             transition={{ type: "spring", stiffness: 220, damping: 22 }}
             className="relative overflow-hidden rounded-[22px] border border-white/80 bg-white/60 shadow-[0_28px_72px_rgba(40,70,110,0.18)] backdrop-blur-sm"
           >
-            {/* image — deep parallax within card */}
-            <div className="relative h-[300px] sm:h-[370px] lg:h-[440px] xl:h-[480px]">
-              <motion.div
-                style={{ y: imgY, scale: 1.08 }}
-                className="absolute inset-0 will-change-transform"
-              >
-                <Image
-                  src={bannerImage}
-                  alt="Luxury hospitality asset"
-                  fill
-                  className="object-cover object-center"
-                  priority
-                />
-              </motion.div>
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d0f14] via-[#0d0f14]/20 to-transparent" />
+            {/* ── SLIDER image area ── */}
+            <div className="relative h-[300px] sm:h-[370px] lg:h-[440px] xl:h-[480px] overflow-hidden">
+              <AnimatePresence initial={false} custom={direction} mode="sync">
+                <motion.div
+                  key={activeSlide}
+                  custom={direction}
+                  initial={{ opacity: 0, x: direction * 60 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: direction * -60 }}
+                  transition={{ duration: 0.6, ease: EASE }}
+                  className="absolute inset-0 will-change-transform"
+                >
+                  <motion.div
+                    style={{ y: imgY, scale: 1.08 }}
+                    className="absolute inset-0 will-change-transform"
+                  >
+                    <Image
+                      src={SLIDES[activeSlide].image}
+                      alt={SLIDES[activeSlide].title}
+                      fill
+                      className="object-cover object-center"
+                      priority={activeSlide === 0}
+                    />
+                  </motion.div>
+                </motion.div>
+              </AnimatePresence>
 
-              {/* floating label — independent parallax inside image */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0d0f14] via-[#0d0f14]/20 to-transparent pointer-events-none z-10" />
+
+              {/* floating badge */}
               <motion.div
                 style={{
                   y: useTransform(scrollYProgress, [0, 1], ["0px", "-28px"]),
                   x: mX,
                 }}
-                className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3.5 py-1.5 backdrop-blur-md will-change-transform"
+                className="absolute left-4 top-4 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3.5 py-1.5 backdrop-blur-md will-change-transform"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">
-                  Live Deal
-                </span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={activeSlide}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`h-1.5 w-1.5 rounded-full ${BADGE_DOT_COLORS[SLIDES[activeSlide].badgeColor]}`}
+                  />
+                </AnimatePresence>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={activeSlide}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-[10px] font-semibold uppercase tracking-widest text-white/80"
+                  >
+                    {SLIDES[activeSlide].badge}
+                  </motion.span>
+                </AnimatePresence>
               </motion.div>
+
+              {/* slide counter */}
+              <div className="absolute right-4 top-4 z-20 rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[9.5px] font-semibold text-white/60 backdrop-blur-md tabular-nums">
+                {activeSlide + 1} / {SLIDES.length}
+              </div>
+
+              {/* dot indicators */}
+              <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
+                {SLIDES.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setDirection(i > activeSlide ? 1 : -1); setActiveSlide(i); }}
+                    aria-label={`Slide ${i + 1}`}
+                    className={[
+                      "h-1.5 rounded-full transition-all duration-300",
+                      i === activeSlide
+                        ? "w-6 bg-white"
+                        : "w-1.5 bg-white/40 hover:bg-white/70",
+                    ].join(" ")}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* dark info panel */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.62, duration: 0.65, ease: EASE }}
-              className="bg-[#0d0f14] px-5 py-5"
-            >
+            <div className="bg-[#0d0f14] px-5 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[9.5px] font-semibold uppercase tracking-[0.18em] text-white/35">
-                    Structured Asset
-                  </p>
-                  <p className="mt-1.5 font-display text-[1.125rem] font-bold leading-snug text-white">
-                    Running Hotel · Indore
-                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={`label-${activeSlide}`}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-[9.5px] font-semibold uppercase tracking-[0.18em] text-white/35"
+                    >
+                      {SLIDES[activeSlide].label}
+                    </motion.p>
+                  </AnimatePresence>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={`title-${activeSlide}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.35, delay: 0.05 }}
+                      className="mt-1.5 font-display text-[1.125rem] font-bold leading-snug text-white"
+                    >
+                      {SLIDES[activeSlide].title}
+                    </motion.p>
+                  </AnimatePresence>
                 </div>
-                <motion.span
-                  whileHover={{ scale: 1.06 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 16 }}
-                  className="shrink-0 cursor-default rounded-full border border-emerald-400/30 bg-emerald-500/12 px-3.5 py-1.5 text-[10.5px] font-semibold text-emerald-300 transition-colors duration-200 hover:border-emerald-400/60 hover:bg-emerald-500/20"
-                >
-                  ● Secured
-                </motion.span>
               </div>
-
-              <div className="my-4 h-px bg-white/[0.08]" />
-
-              <div className="grid grid-cols-4 gap-2.5">
-                {STATS.map(([k, v]) => (
-                  <motion.div
-                    key={k}
-                    whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.10)" }}
-                    transition={{ type: "spring", stiffness: 380, damping: 20 }}
-                    className="cursor-default rounded-xl border border-white/[0.07] bg-white/[0.06] px-3 py-2.5"
-                  >
-                    <p className="text-[9px] font-medium uppercase tracking-wide text-white/35">{k}</p>
-                    <p className="mt-1 text-[0.875rem] font-semibold text-white">{v}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            </div>
           </motion.div>
         </motion.div>
 

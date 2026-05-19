@@ -64,14 +64,14 @@ export default function ContactBar() {
   return (
     <div className="bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50/30 border border-blue-200/30 rounded-2xl p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 shadow-[0_8px_32px_rgba(61,127,197,0.08),0_1px_3px_rgba(61,127,197,0.06)]">
       {/* label section */}
-      <div className="flex-1 min-w-0">
+      {/* <div className="flex-1 min-w-0">
         <p className="m-0 font-bold tracking-[0.1em] uppercase text-slate-400 text-xs sm:text-sm">
           Contact Us
         </p>
         <p className="mt-0.5 font-semibold text-slate-800 text-sm sm:text-base whitespace-nowrap sm:whitespace-normal">
           Let&apos;s connect we respond within 24 hrs
         </p>
-      </div>
+      </div> */}
 
       {/* divider - hidden on mobile, visible on sm and up */}
       <div className="hidden sm:block w-px h-9 bg-blue-200/50 flex-shrink-0" aria-hidden />

@@ -89,6 +89,19 @@ function normalizeApiProperties(payload: unknown): Property[] {
     const monthlyRent = listingType === 3 ? annualRentalIncome / 12 : expectedMonthlyRent;
     const roi = listingType === 3 && sellingPrice > 0 ? (annualRentalIncome / sellingPrice) * 100 : 0;
 
+    const rawDocs = Array.isArray(property.documents) ? property.documents : [];
+    const mediaBase = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "";
+    const documents = rawDocs
+      .filter((d): d is { id: string; document_file: string } =>
+        d && typeof d === "object" && typeof d.document_file === "string" && d.document_file.trim() !== ""
+      )
+      .map((d) => ({
+        id: String(d.id ?? ""),
+        document_file: d.document_file.startsWith("http://") || d.document_file.startsWith("https://")
+          ? d.document_file
+          : `${mediaBase}${d.document_file}`,
+      }));
+
     normalizedProperties.push({
       id,
       slug: toText(property.slug, `${id.toLowerCase().replace(/\s+/g, "-")}-${index + 1}`),
@@ -99,7 +112,9 @@ function normalizeApiProperties(payload: unknown): Property[] {
       country: toText(property.country, "India"),
       propertyType: toPropertyType(property.property_type),
       areaInSqFt: toNumber(property.built_up_area, 0),
+      rooms: toNumber(property.rooms, 0) || undefined,
       propertyPrice: sellingPrice,
+      expectedMonthlyRent: expectedMonthlyRent || undefined,
       monthlyRent,
       roi,
       imageUrl: toImageUrl(property.documents),
@@ -113,6 +128,7 @@ function normalizeApiProperties(payload: unknown): Property[] {
       leaseTerm: toText(property.lock_in_period, "N/A"),
       occupancyStatus: "N/A",
       listedDate: toText(property.created_at, "Recently listed"),
+      documents,
     });
   });
 
