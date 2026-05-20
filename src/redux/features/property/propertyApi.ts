@@ -82,6 +82,7 @@ export type IHandleAdminLeadResponse = ICreatePropertyResponse;
 export type ISellerRequestMeetingResponse = ICreatePropertyResponse;
 export type IFilterPropertiesResponse = unknown;
 export type IPropertyViewResponse = unknown;
+export type IGetFeaturedPropertiesResponse = unknown;
 
 
 function appendFormData<T extends object>(body: T) {
@@ -192,6 +193,15 @@ const propertyApi = baseApi.injectEndpoints({
       invalidatesTags: ["Inquiry"],
     }),
 
+    getFeaturedProperties: builder.query<IGetFeaturedPropertiesResponse, void>({
+      query: () => ({
+        url: "/user/v1/property/listing/featured_property_view/",
+        method: "GET",
+      }),
+      transformResponse: (response: IGetFeaturedPropertiesResponse) => response,
+      providesTags: ["Property"],
+    }),
+
     filterProperties: builder.query<IFilterPropertiesResponse, IFilterPropertiesRequest>({
       query: (params: IFilterPropertiesRequest) => ({
         url: "/user/v1/property/listing/filter_properties/",
@@ -237,4 +247,5 @@ export const {
   useLazyFilterPropertiesQuery,
   useHandleBuyerOperatorLeadMutation,
   useHandleLesseeOperatorLeadMutation,
+  useGetFeaturedPropertiesQuery,
 } = propertyApi;

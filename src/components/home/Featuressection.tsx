@@ -5,9 +5,10 @@ import Link from "next/link";
 import {
   motion,
   useInView,
+  AnimatePresence,
   type Variants,
 } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState, useMemo } from "react";
 import {
   Users,
   ShieldCheck,
@@ -17,10 +18,12 @@ import {
   Home,
   DollarSign,
   Building2,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
 } from "lucide-react";
-
-import featuredImage from "@/src/assets/images/best_deals.png";
-import roomImage from "@/src/assets/images/home.png";
+import { useGetFeaturedPropertiesQuery } from "@/src/redux/features/property/propertyApi";
+import { Property, PropertyStatus, PropertyType } from "@/src/types/property";
 
 /* ─── shared animation factory ────────────────────────── */
 function useFadeIn(threshold = 0.15) {
@@ -90,29 +93,6 @@ const trustItems = [
   "Dedicated relationship managers",
 ];
 
-const FEATURED = [
-  {
-    title: "31-Key Running Hotel",
-    location: "Vijay Nagar, Indore",
-    pricing: "₹3.1 Cr · ready unit",
-    yield: "8.4% est. yield",
-    status: "Pre-leased / strong asset",
-    market: "65–72% occupancy",
-    image: featuredImage,
-    badge: "Pre-Leased",
-  },
-  {
-    title: "Service Apartment Block",
-    location: "Gurgaon",
-    pricing: "Income generating unit",
-    yield: "9.1% est. yield",
-    status: "LSA-backed structure",
-    market: "Operator tied demand",
-    image: roomImage,
-    badge: "For Lease",
-  },
-];
-
 const FAQ = [
   {
     q: "What is PreleaseHub?",
@@ -177,29 +157,270 @@ const INFO_CARDS = [
   },
 ];
 
-const STAT_CARDS = [
-  {
-    num: "45",
-    label: "Day operator deal promise",
-    sub: "Targeted closure window for verified assets with qualified operators",
-    from: "#0f1724",
-    to: "#224a7d",
-  },
-  {
-    num: "3",
-    label: "Distinct user journeys",
-    sub: "Owner · Investor · Operator — each with a dedicated workflow and dashboard",
-    from: "#224a7d",
-    to: "#4b86ca",
-  },
-  {
-    num: "100%",
-    label: "Verified listings only",
-    sub: "Every asset is vetted before appearing on the platform",
-    from: "#1a3a6b",
-    to: "#2d5fa0",
-  },
-];
+/* ── API normalization helpers ── */
+function toNum(v: unknown, fb = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fb;
+}
+function toStr(v: unknown, fb: string): string {
+  return typeof v === "string" && v.trim() ? v.trim() : fb;
+}
+function toPropertyType(v: unknown): PropertyType {
+  const s = typeof v === "string" ? v.toLowerCase().trim() : String(v);
+  if (s === "hotel" || s === "1") return "Hotel";
+  if (s === "resort" || s === "2") return "Resort";
+  if (s === "villa" || s === "3") return "Villa";
+  if (s === "service apartment" || s === "service_apartment" || s === "4") return "Service Apartment";
+  if (s === "holiday home" || s === "holiday_home" || s === "5") return "Holiday Home";
+  return "Commercial";
+}
+function toPropertyStatus(v: unknown): PropertyStatus {
+  const s = typeof v === "string" ? v.toLowerCase().trim() : String(v);
+  if (s === "lease" || s === "lease-ready" || s === "2") return "Lease-Ready";
+  if (s === "sell" || s === "sale" || s === "1") return "Sale";
+  return "Pre-Leased";
+}
+function toImageUrl(v: unknown): string {
+  if (Array.isArray(v) && v.length > 0) {
+    const first = v[0];
+    if (first && typeof first === "object") {
+      const fp = (first as { document_file?: unknown }).document_file;
+      if (typeof fp === "string" && fp.trim()) {
+        if (fp.startsWith("http://") || fp.startsWith("https://")) return fp;
+        return `${process.env.NEXT_PUBLIC_MEDIA_BASE_URL || ""}${fp}`;
+      }
+    }
+  }
+  return typeof v === "string" && v.trim() ? v : "";
+}
+
+function normalizeFeaturedProperties(payload: unknown): Property[] {
+  const raw =
+    payload && typeof payload === "object" && "data" in payload
+      ? (payload as { data?: unknown }).data
+      : payload;
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+    .map((item, i) => {
+      const id = toStr(item.id, `F-${i + 1}`);
+      const listingType = toNum(item.listing_type, 0);
+      const annualRent = toNum(item.annual_rental_income, 0);
+      const sellingPrice = toNum(item.selling_price, 0);
+      const expectedMonthlyRent = toNum(item.expected_monthly_rent, 0);
+      const monthlyRent = listingType === 3 ? annualRent / 12 : expectedMonthlyRent;
+      const roi = listingType === 3 && sellingPrice > 0 ? (annualRent / sellingPrice) * 100 : 0;
+      const propertyStatus = toPropertyStatus(listingType);
+      return {
+        id,
+        slug: toStr(item.slug, `${id.toLowerCase().replace(/\s+/g, "-")}-${i + 1}`),
+        source: "listings" as const,
+        title: toStr(item.property_name, `Property ${i + 1}`),
+        city: toStr(item.city, "India"),
+        state: toStr(item.location, toStr(item.state, "")),
+        country: toStr(item.country, "India"),
+        propertyType: toPropertyType(item.property_type),
+        areaInSqFt: toNum(item.built_up_area, 0),
+        rooms: toNum(item.rooms, 0) || undefined,
+        propertyPrice: sellingPrice,
+        monthlyRent,
+        roi,
+        imageUrl: toImageUrl(item.documents),
+        currency: "₹",
+        propertyStatus,
+        statusLabel: toStr(item.status, propertyStatus),
+        listingType,
+        description: toStr(item.property_description, ""),
+        highlights: [],
+        amenities: [],
+        leaseTerm: toStr(item.lock_in_period, "N/A"),
+        occupancyStatus: "N/A",
+        listedDate: toStr(item.created_at, "Recently listed"),
+      };
+    });
+}
+
+function formatPrice(p: Property): string {
+  const fmt = (n: number) =>
+    n >= 10_000_000
+      ? `₹${(n / 10_000_000).toFixed(2)} Cr`
+      : n >= 100_000
+      ? `₹${(n / 100_000).toFixed(1)} L`
+      : `₹${n.toLocaleString("en-IN")}`;
+  if (p.listingType === 1) return p.propertyPrice > 0 ? fmt(p.propertyPrice) : "On Request";
+  if (p.listingType === 2) return p.monthlyRent > 0 ? `${fmt(p.monthlyRent)}/mo` : "On Request";
+  if (p.listingType === 3) return p.monthlyRent > 0 ? `${fmt(p.monthlyRent)}/mo` : "On Request";
+  return "On Request";
+}
+
+function listingLabel(type: number): string {
+  if (type === 1) return "For Sale";
+  if (type === 2) return "Lease-Ready";
+  if (type === 3) return "Pre-Leased";
+  return "Listed";
+}
+
+/* ── Skeleton card ── */
+function SkeletonCard() {
+  return (
+    <div className="flex-shrink-0 w-full md:w-[calc(50%-14px)] rounded-3xl overflow-hidden border border-(--brand-blue-100) bg-white shadow-[0_22px_52px_rgba(61,127,197,0.09)] animate-pulse">
+      <div className="h-64 bg-slate-200" />
+      <div className="p-7 space-y-4">
+        <div className="h-6 w-2/3 rounded-lg bg-slate-200" />
+        <div className="h-4 w-1/3 rounded-lg bg-slate-100" />
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          {[1, 2, 3, 4].map((n) => <div key={n} className="h-14 rounded-xl bg-slate-100" />)}
+        </div>
+        <div className="h-11 rounded-full bg-slate-200 mt-2" />
+      </div>
+    </div>
+  );
+}
+
+/* ── Featured property card ── */
+function FeaturedCard({ prop, index, animate }: { prop: Property; index: number; animate: boolean }) {
+  const detailHref = `/property/${prop.slug}?source=listings&id=${prop.id}`;
+  return (
+    <motion.article
+      key={prop.id}
+      variants={cardVariants}
+      initial="hidden"
+      animate={animate ? "visible" : "hidden"}
+      custom={index}
+      className="flex-shrink-0 w-full md:w-[calc(50%-14px)] group overflow-hidden rounded-3xl border border-(--brand-blue-100) bg-white shadow-[0_22px_52px_rgba(61,127,197,0.09)] transition hover:-translate-y-1 hover:shadow-[0_28px_62px_rgba(61,127,197,0.14)]"
+    >
+      <div className="relative overflow-hidden">
+        {prop.imageUrl ? (
+          <Image
+            src={prop.imageUrl}
+            alt={prop.title}
+            width={720}
+            height={288}
+            className="h-56 w-full object-cover transition duration-700 group-hover:scale-105 sm:h-64 lg:h-72"
+          />
+        ) : (
+          <div className="h-56 w-full bg-slate-100 flex items-center justify-center sm:h-64 lg:h-72">
+            <Building2 className="h-12 w-12 text-slate-300" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+        <span className="absolute left-4 top-4 rounded-full bg-(--ink-900) px-3 py-1 text-xs font-semibold text-white">
+          {listingLabel(prop.listingType)}
+        </span>
+      </div>
+
+      <div className="p-7">
+        <h3 className="font-display text-2xl font-semibold text-(--navy) leading-tight">{prop.title}</h3>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-(--slate-500)">
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          {prop.city}{prop.state ? `, ${prop.state}` : ""}
+        </p>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          {[
+            ["Pricing", formatPrice(prop)],
+            ["Yield / ROI", prop.roi > 0 ? `${prop.roi.toFixed(2)}%` : listingLabel(prop.listingType)],
+            ["Property Type", prop.propertyType],
+            ["Area", prop.areaInSqFt > 0 ? `${prop.areaInSqFt.toLocaleString("en-IN")} sq ft` : "N/A"],
+          ].map(([k, v]) => (
+            <div key={k} className="rounded-xl border border-(--brand-blue-100) bg-(--brand-blue-50) p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-(--slate-400)">{k}</p>
+              <p className="mt-1 text-sm font-medium text-(--navy)">{v}</p>
+            </div>
+          ))}
+        </div>
+
+        <Link
+          href={detailHref}
+          className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-(--ink-900) py-3 text-sm font-semibold text-white transition hover:bg-(--ink-700)"
+        >
+          View Deal →
+        </Link>
+      </div>
+    </motion.article>
+  );
+}
+
+/* ── Slider wrapper ── */
+function FeaturedSlider({ properties, animate }: { properties: Property[]; animate: boolean }) {
+  const [page, setPage] = useState(0);
+  const [dir, setDir] = useState(1);
+  const perPage = 2;
+  const totalPages = Math.ceil(properties.length / perPage);
+
+  const pageItems = properties.slice(page * perPage, page * perPage + perPage);
+
+  function go(next: number) {
+    setDir(next > page ? 1 : -1);
+    setPage(next);
+  }
+
+  const sliderVariants: Variants = {
+    enter: (d: number) => ({ x: d > 0 ? "60%" : "-60%", opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { duration: 0.5, ease: EASE } },
+    exit: (d: number) => ({ x: d > 0 ? "-60%" : "60%", opacity: 0, transition: { duration: 0.4, ease: EASE } }),
+  };
+
+  return (
+    <div className="mt-10">
+      <div className="relative overflow-hidden">
+        <AnimatePresence mode="wait" custom={dir}>
+          <motion.div
+            key={page}
+            custom={dir}
+            variants={sliderVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            className="flex gap-7"
+          >
+            {pageItems.map((prop, i) => (
+              <FeaturedCard key={prop.id} prop={prop} index={i} animate={animate} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-4">
+          <button
+            onClick={() => go(Math.max(0, page - 1))}
+            disabled={page === 0}
+            aria-label="Previous"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-(--brand-blue-200) bg-white text-(--navy) shadow-sm transition hover:border-(--ink-900) hover:bg-(--ink-900) hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => go(i)}
+                aria-label={`Go to page ${i + 1}`}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === page
+                    ? "w-6 bg-(--ink-900)"
+                    : "w-2 bg-(--brand-blue-200) hover:bg-(--brand-blue-400)"
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => go(Math.min(totalPages - 1, page + 1))}
+            disabled={page === totalPages - 1}
+            aria-label="Next"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-(--brand-blue-200) bg-white text-(--navy) shadow-sm transition hover:border-(--ink-900) hover:bg-(--ink-900) hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ── Section label ── */
 function SectionLabel({
@@ -236,6 +457,8 @@ export default function FeaturesSection() {
 
   /* ── 3. FEATURED DEALS ── */
   const { ref: dealRef, inView: dealIn } = useFadeIn();
+  const { data: featuredData, isLoading: featuredLoading } = useGetFeaturedPropertiesQuery();
+  const featuredProperties = useMemo(() => normalizeFeaturedProperties(featuredData), [featuredData]);
 
   /* ── 4. PLATFORM PATHS ── */
   const { ref: whyRef, inView: whyIn } = useFadeIn();
@@ -346,56 +569,26 @@ export default function FeaturesSection() {
             </p>
           </motion.div>
 
-          <div className="mt-10 grid gap-7 lg:grid-cols-2">
-            {FEATURED.map((prop, i) => (
-              <motion.article
-                key={prop.title}
-                variants={cardVariants}
-                initial="hidden"
-                animate={dealIn ? "visible" : "hidden"}
-                custom={i}
-                className="group overflow-hidden rounded-3xl border border-(--brand-blue-100) bg-white shadow-[0_22px_52px_rgba(61,127,197,0.09)] transition hover:-translate-y-1 hover:shadow-[0_28px_62px_rgba(61,127,197,0.14)]"
+          {featuredLoading ? (
+            <div className="mt-10 flex gap-7 overflow-hidden">
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : featuredProperties.length === 0 ? (
+            <div className="mt-10 flex flex-col items-center justify-center rounded-3xl border border-(--brand-blue-100) bg-(--brand-blue-50) py-16 text-center">
+              <Building2 className="h-10 w-10 text-(--brand-blue-300) mb-4" />
+              <p className="text-base font-medium text-(--navy)">No featured properties available right now.</p>
+              <p className="mt-1 text-sm text-(--slate-500)">Check back soon for curated hospitality deals.</p>
+              <Link
+                href="/listings"
+                className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-(--ink-900) px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-(--ink-700)"
               >
-                <div className="relative overflow-hidden">
-                  <Image
-                    src={prop.image}
-                    alt={prop.title}
-                    className="h-56 w-full object-cover transition duration-700 group-hover:scale-105 sm:h-64 lg:h-72"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
-                  <span className="absolute left-4 top-4 rounded-full bg-(--ink-900) px-3 py-1 text-xs font-semibold text-white">
-                    {prop.badge}
-                  </span>
-                </div>
-
-                <div className="p-7">
-                  <h3 className="font-display text-2xl font-semibold text-(--navy)">{prop.title}</h3>
-                  <p className="mt-1 text-sm text-(--slate-500)">{prop.location}</p>
-
-                  <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {[
-                      ["Pricing", prop.pricing],
-                      ["Yield / Model", prop.yield],
-                      ["Market Signal", prop.market],
-                      ["Status", prop.status],
-                    ].map(([k, v]) => (
-                      <div key={k} className="rounded-xl border border-(--brand-blue-100) bg-(--brand-blue-50) p-3.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-(--slate-400)">{k}</p>
-                        <p className="mt-1 text-sm font-medium text-(--navy)">{v}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Link
-                    href="/investor/offering"
-                    className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-(--ink-900) py-3 text-sm font-semibold text-white transition hover:bg-(--ink-700)"
-                  >
-                    View Deal →
-                  </Link>
-                </div>
-              </motion.article>
-            ))}
-          </div>
+                Browse all listings →
+              </Link>
+            </div>
+          ) : (
+            <FeaturedSlider properties={featuredProperties} animate={dealIn} />
+          )}
         </div>
       </section>
 
