@@ -450,6 +450,7 @@ export default function HeroSection() {
                       src={SLIDES[activeSlide].image}
                       alt={SLIDES[activeSlide].title}
                       fill
+                      sizes="(min-width: 1024px) 50vw, 100vw"
                       className="object-cover object-center"
                       priority={activeSlide === 0}
                     />

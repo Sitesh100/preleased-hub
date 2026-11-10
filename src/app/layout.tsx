@@ -25,8 +25,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${roboto.variable} h-full antialiased`}>
-      <body className={`${roboto.className} min-h-full flex flex-col`}>
+      <body className={`${roboto.className} relative min-h-full flex flex-col`}>
         <Providers>
           <Navbar />
           <main className="flex-1">{children}</main>
